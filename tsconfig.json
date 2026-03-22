@@ -17,5 +17,20 @@
       "@/utils/*": ["src/utils/*"],
       "@/types/*": ["src/types/*"]
     }
-  }
+  },
+  "include": [
+    "App.tsx",
+    "index.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".expo",
+    "src/modules",
+    "src/core",
+    "src/shared"
+  ]
 }

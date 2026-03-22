@@ -8,6 +8,35 @@ const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
 type TakeawayListParams = Record<string, string | number | boolean | string[] | undefined>;
 
+const normalizeRestaurant = (item: Restaurant): Restaurant => {
+    const name = item.restaurantInfo?.name || item.name;
+    const address = item.restaurantInfo?.address || item.address;
+    const cuisines = item.restaurantInfo?.cuisines || item.cuisines || [];
+    const images = item.image_urls || item.images || (item.imageUrl ? [item.imageUrl] : []);
+    const latitude = item.latitude ?? item.location?.lat;
+    const longitude = item.longitude ?? item.location?.lng;
+
+    const lat = typeof latitude === 'string' ? Number(latitude) : latitude;
+    const lng = typeof longitude === 'string' ? Number(longitude) : longitude;
+
+    return {
+        ...item,
+        _id: item._id,
+        name,
+        address,
+        cuisines: Array.isArray(cuisines) ? cuisines : cuisines ? [cuisines] : [],
+        images,
+        imageUrl: images[0],
+        location: {
+            lat: Number.isFinite(lat as number) ? (lat as number) : undefined,
+            lng: Number.isFinite(lng as number) ? (lng as number) : undefined,
+            address,
+        },
+        serviceTypes: item.features || item.serviceTypes,
+        openingHours: item.opening_hours || item.openingHours,
+    } as Restaurant;
+};
+
 export const useRestaurants = (params?: TakeawayListParams) => {
     const queryParams = { feature: 'Takeaway', ...(params || {}) };
     return useQuery({
@@ -25,8 +54,9 @@ export const useRestaurants = (params?: TakeawayListParams) => {
                     : Array.isArray(payload?.data)
                     ? (payload.data as Restaurant[])
                     : [];
-                await storage.saveCache('restaurants:list', items);
-                return items;
+                const normalized = items.map((item) => normalizeRestaurant(item as Restaurant & Record<string, unknown>));
+                await storage.saveCache('restaurants:list', normalized);
+                return normalized;
             } catch (error) {
                 const cached = await storage.getCache<Restaurant[]>('restaurants:list', LIST_CACHE_TTL);
                 return cached ?? [];
@@ -51,12 +81,14 @@ export const useRestaurantsInfinite = (params?: TakeawayListParams) => {
                 else if (Array.isArray(payload?.items)) items = payload.items;
                 else if (Array.isArray(payload?.data)) items = payload.data;
 
+                const normalized = items.map((item) => normalizeRestaurant(item as Restaurant & Record<string, unknown>));
+
                 if (pageParam === 1) {
-                    await storage.saveCache('restaurants:list', items);
+                    await storage.saveCache('restaurants:list', normalized);
                 }
 
                 return {
-                    items,
+                    items: normalized,
                     nextPage: items.length >= 10 ? pageParam + 1 : undefined,
                 };
             } catch (error) {
@@ -79,7 +111,8 @@ export const useRestaurantDetail = (id: string) => {
         queryKey: ['restaurant', id],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.detail(id));
-            return (data.data || data) as RestaurantDetail;
+            const payload = (data.data || data) as RestaurantDetail;
+            return normalizeRestaurant(payload as Restaurant & Record<string, unknown>) as RestaurantDetail;
         },
         enabled: !!id,
     });

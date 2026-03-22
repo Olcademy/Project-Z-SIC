@@ -5,6 +5,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/navigation/types';
 import { apiClient } from '@/platform/api/client';
 import { ErrorState } from '@/ui/components/ErrorState';
+import { useAppSelector } from '@/hooks/useAppStore';
+import { useUser } from '@/ui/context/UserContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -14,6 +16,11 @@ type LoginForm = {
 };
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
+    const { login } = useUser();
+    const theme = useAppSelector((state) => state.ui.theme);
+    const isDark = theme === 'dark';
+    const placeholderTextColor = isDark ? '#94A3B8' : '#6B7280';
+
     const [form, setForm] = useState<LoginForm>({ email: '', password: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -70,6 +77,20 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             });
 
             if (response.data?.success || response.data?.message === 'Login successful!') {
+                const derivedName = form.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+                const userData = response.data.user || {
+                    name: derivedName,
+                    email: form.email,
+                    phone: '',
+                    location: 'India'
+                };
+                
+                // Fallback if backend user object is missing a name
+                if (!userData.name || userData.name.trim() === '') {
+                    userData.name = derivedName;
+                }
+
+                await login(userData);
                 navigation.replace('MainTabs');
                 return;
             }
@@ -197,30 +218,35 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#f2f6f6]">
-            <View className="bg-[#e6f4f4] px-6 pt-12 pb-8">
-                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef]" />
-                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef]" />
-                <Text className="text-2xl font-bold text-gray-900">Welcome back</Text>
-                <Text className="text-sm text-gray-700 mt-2">Sign in to continue your discovery journey.</Text>
+        <SafeAreaView className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
+            <View className="bg-[#e6f4f4] dark:bg-slate-900 px-6 pt-12 pb-8">
+                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+                <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">Welcome back</Text>
+                <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">Sign in to continue your discovery journey.</Text>
             </View>
 
             <View className="px-6 -mt-6">
-                <View className="bg-white rounded-3xl p-5 shadow-sm" style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
-                    <Text className="text-sm text-gray-700 mb-2">Email</Text>
+                <View
+                    className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm"
+                    style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
+                >
+                    <Text className="text-sm text-gray-700 dark:text-slate-300 mb-2">Email</Text>
                     <TextInput
-                        className="border border-gray-200 rounded-2xl px-4 py-3 text-base"
+                        className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
                         placeholder="you@example.com"
+                        placeholderTextColor={placeholderTextColor}
                         autoCapitalize="none"
                         keyboardType="email-address"
                         value={form.email}
                         onChangeText={(value) => handleChange('email', value)}
                     />
 
-                    <Text className="text-sm text-gray-700 mt-5 mb-2">Password</Text>
+                    <Text className="text-sm text-gray-700 dark:text-slate-300 mt-5 mb-2">Password</Text>
                     <TextInput
-                        className="border border-gray-200 rounded-2xl px-4 py-3 text-base"
+                        className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
                         placeholder="Password"
+                        placeholderTextColor={placeholderTextColor}
                         secureTextEntry
                         value={form.password}
                         onChangeText={(value) => handleChange('password', value)}
@@ -232,9 +258,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                             onPress={() => setRememberMe((prev) => !prev)}
                         >
                             <View
-                                className={`h-5 w-5 rounded border ${rememberMe ? 'bg-[#02757A] border-[#02757A]' : 'border-gray-300'}`}
+                                className={`h-5 w-5 rounded border ${rememberMe ? 'bg-[#02757A] border-[#02757A]' : 'border-gray-300 dark:border-slate-600'}`}
                             />
-                            <Text className="ml-2 text-sm text-gray-700">Remember me</Text>
+                            <Text className="ml-2 text-sm text-gray-700 dark:text-slate-300">Remember me</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleForgotPassword} disabled={otpLoading}>
                             <Text className="text-sm text-[#02757A] font-semibold">Forgot password?</Text>
@@ -256,31 +282,31 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                     {errorMessage ? <ErrorState message={errorMessage} /> : null}
 
                     <View className="mt-6">
-                        <Text className="text-xs text-gray-500 text-center">Or continue with</Text>
+                        <Text className="text-xs text-gray-500 dark:text-slate-400 text-center">Or continue with</Text>
                         <View className="flex-row justify-center mt-3">
                             <TouchableOpacity
-                                className="border border-gray-200 px-4 py-2 rounded-full mr-3"
+                                className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full mr-3"
                                 onPress={() => launchOAuthFlow('google')}
                             >
-                                <Text className="text-sm text-gray-700">Google</Text>
+                                <Text className="text-sm text-gray-700 dark:text-slate-200">Google</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                className="border border-gray-200 px-4 py-2 rounded-full mr-3"
+                                className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full mr-3"
                                 onPress={() => launchOAuthFlow('facebook')}
                             >
-                                <Text className="text-sm text-gray-700">Facebook</Text>
+                                <Text className="text-sm text-gray-700 dark:text-slate-200">Facebook</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                className="border border-gray-200 px-4 py-2 rounded-full"
+                                className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full"
                                 onPress={() => launchOAuthFlow('twitter')}
                             >
-                                <Text className="text-sm text-gray-700">Twitter</Text>
+                                <Text className="text-sm text-gray-700 dark:text-slate-200">Twitter</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     <TouchableOpacity className="mt-6" onPress={() => navigation.navigate('Signup')}>
-                        <Text className="text-sm text-gray-700 text-center">
+                        <Text className="text-sm text-gray-700 dark:text-slate-300 text-center">
                             New here? <Text className="text-[#02757A] font-semibold">Create an account</Text>
                         </Text>
                     </TouchableOpacity>
@@ -289,9 +315,12 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             {showReset ? (
                 <View className="px-6 pb-8 mt-6">
-                    <View className="bg-white rounded-3xl p-5 shadow-sm" style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
-                    <Text className="text-lg font-semibold text-gray-900">Reset Password</Text>
-                    <Text className="text-sm text-gray-600 mt-2">Enter the OTP sent to your email.</Text>
+                    <View
+                        className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm"
+                        style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
+                    >
+                    <Text className="text-lg font-semibold text-gray-900 dark:text-slate-100">Reset Password</Text>
+                    <Text className="text-sm text-gray-600 dark:text-slate-300 mt-2">Enter the OTP sent to your email.</Text>
 
                     {otpError ? <Text className="text-sm text-red-600 mt-3 text-center">{otpError}</Text> : null}
 
@@ -302,7 +331,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                 ref={(el) => {
                                     otpRefs.current[index] = el;
                                 }}
-                                className="w-11 h-12 border border-gray-200 rounded-2xl text-center text-lg"
+                                className="w-11 h-12 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl text-center text-lg text-gray-900 dark:text-slate-100"
                                 keyboardType="numeric"
                                 maxLength={1}
                                 value={digit}
@@ -333,19 +362,21 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
                     {isOtpVerified ? (
                         <View className="mt-6">
-                            <Text className="text-sm text-gray-700 mb-2">New Password</Text>
+                            <Text className="text-sm text-gray-700 dark:text-slate-300 mb-2">New Password</Text>
                             <TextInput
-                                className="border border-gray-200 rounded-2xl px-4 py-3 text-base"
+                                className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
                                 placeholder="New password"
+                                placeholderTextColor={placeholderTextColor}
                                 secureTextEntry
                                 value={newPassword}
                                 onChangeText={setNewPassword}
                             />
 
-                            <Text className="text-sm text-gray-700 mt-5 mb-2">Confirm Password</Text>
+                            <Text className="text-sm text-gray-700 dark:text-slate-300 mt-5 mb-2">Confirm Password</Text>
                             <TextInput
-                                className="border border-gray-200 rounded-2xl px-4 py-3 text-base"
+                                className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
                                 placeholder="Confirm password"
+                                placeholderTextColor={placeholderTextColor}
                                 secureTextEntry
                                 value={confirmPassword}
                                 onChangeText={setConfirmPassword}

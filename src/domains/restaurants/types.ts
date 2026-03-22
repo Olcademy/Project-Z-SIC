@@ -30,6 +30,19 @@ export interface Restaurant {
     imageUrl?: string;
     location?: RestaurantLocation;
     address?: string;
+    restaurantInfo?: {
+        name?: string;
+        address?: string;
+        cuisines?: string[] | null;
+        ratings?: {
+            overall?: number;
+        };
+    };
+    image_urls?: string[];
+    opening_hours?: Record<string, string>;
+    latitude?: string | number;
+    longitude?: string | number;
+    features?: string[];
 }
 
 export interface RestaurantDetail extends Restaurant {

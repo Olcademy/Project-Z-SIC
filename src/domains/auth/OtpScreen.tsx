@@ -3,11 +3,15 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'reac
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/navigation/types';
 import { apiClient } from '@/platform/api/client';
+import { useAppSelector } from '@/hooks/useAppStore';
 
  type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
 
 export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     const { email, password, username } = route.params;
+    const theme = useAppSelector((state) => state.ui.theme);
+    const isDark = theme === 'dark';
+
     const [otpArray, setOtpArray] = useState(Array(6).fill(''));
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [timer, setTimer] = useState(300);
@@ -121,18 +125,21 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     return (
-        <View className="flex-1 bg-[#f2f6f6]">
-            <View className="bg-[#e6f4f4] px-6 pt-12 pb-8">
-                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef]" />
-                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef]" />
-                <Text className="text-2xl font-bold text-gray-900">Verify Email</Text>
-                <Text className="text-sm text-gray-700 mt-2">
+        <View className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
+            <View className="bg-[#e6f4f4] dark:bg-slate-900 px-6 pt-12 pb-8">
+                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+                <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">Verify Email</Text>
+                <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">
                     Enter the 6-digit code sent to <Text className="font-semibold">{email}</Text>.
                 </Text>
             </View>
 
             <View className="px-6 -mt-6">
-                <View className="bg-white rounded-3xl p-5 shadow-sm" style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <View
+                    className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm"
+                    style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
+                >
 
             {errorMessage ? (
                 <Text className="text-sm text-red-600 mt-2 text-center">{errorMessage}</Text>
@@ -145,7 +152,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
                         ref={(el) => {
                             otpRefs.current[index] = el;
                         }}
-                        className="w-11 h-12 border border-gray-200 rounded-2xl text-center text-lg"
+                        className="w-11 h-12 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl text-center text-lg text-gray-900 dark:text-slate-100"
                         keyboardType="numeric"
                         maxLength={1}
                         value={digit}
@@ -169,7 +176,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
             </TouchableOpacity>
 
             <View className="flex-row justify-center items-center mt-6">
-                <Text className="text-sm text-gray-600">Didn't receive code?</Text>
+                <Text className="text-sm text-gray-600 dark:text-slate-300">Didn't receive code?</Text>
                 <TouchableOpacity onPress={resendOtp} disabled={resendDisabled || isResending}>
                     <Text className={`ml-2 text-sm font-semibold ${resendDisabled || isResending ? 'text-gray-400' : 'text-[#02757A]'}`}>
                         {isResending ? 'Sending...' : resendDisabled ? `Resend in ${formatTime(timer)}` : 'Resend Code'}

@@ -7,12 +7,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NotFound'>;
 
 export const NotFoundScreen: React.FC<Props> = ({ navigation }) => {
     return (
-        <View className="flex-1 bg-[#f7f7f7] items-center justify-center px-6">
-            <Text className="text-6xl font-bold text-gray-300 mb-4">404</Text>
-            <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">
+        <View className="flex-1 bg-[#f7f7f7] dark:bg-gray-950 items-center justify-center px-6">
+            <Text className="text-6xl font-bold text-gray-300 dark:text-gray-700 mb-4">404</Text>
+            <Text className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-2 text-center">
                 Page Not Found
             </Text>
-            <Text className="text-base text-gray-600 mb-8 text-center">
+            <Text className="text-base text-gray-600 dark:text-gray-300 mb-8 text-center">
                 The page you're looking for doesn't exist or has been moved.
             </Text>
             <TouchableOpacity

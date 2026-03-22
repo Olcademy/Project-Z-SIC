@@ -17,6 +17,7 @@ export type EventsStackParamList = {
 
 export type SettingsStackParamList = {
     Settings: undefined;
+    EditProfile: undefined;
 };
 
 export type MainTabsParamList = {

@@ -1,0 +1,27 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.tsserver.exclude": [
+    "**/node_modules/**",
+    "**/src/modules/**",
+    "**/src/core/**",
+    "**/src/shared/**"
+  ],
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.expo": true,
+    "**/src/modules": true,
+    "**/src/core": true,
+    "**/src/shared": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.expo/**": true,
+    "**/src/modules/**": true,
+    "**/src/core/**": true,
+    "**/src/shared/**": true
+  }
+}

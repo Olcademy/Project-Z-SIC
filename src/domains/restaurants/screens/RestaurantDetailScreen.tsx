@@ -18,7 +18,7 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
     const { id } = route.params;
     const { data: restaurant, isLoading, isError, refetch } = useRestaurantDetail(id);
     const { data: featureFlags } = useFeatureFlags();
-
+    const theme = useTheme();
     const normalizedRestaurant = restaurant as RestaurantDetail | undefined;
 
     const images = useMemo(() => {

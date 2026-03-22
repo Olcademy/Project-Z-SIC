@@ -10,6 +10,7 @@ import { EmptyState } from '@/ui/components/EmptyState';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { ScreenHeader } from '@/ui/components/ScreenHeader';
+import { FilterChip } from '@/ui/components/FilterChip';
 import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
 
@@ -17,6 +18,8 @@ type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantList'>
 type SortOption = 'default' | 'price-low' | 'price-high' | 'rating' | 'distance';
 
 export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
+    const theme = useTheme();
+
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
@@ -24,7 +27,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const [priceFilter, setPriceFilter] = useState<'budget' | 'mid' | 'premium' | null>(null);
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [showSortMenu, setShowSortMenu] = useState(false);
-    const theme = useTheme();
 
     const {
         data,
@@ -266,9 +268,13 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                     <View style={{ flexDirection: 'row', marginTop: 10, flexWrap: 'wrap' }}>
                         {cuisineOptions.map((cuisine) =>
-                            renderChip(cuisine, selectedCuisine === cuisine, () =>
-                                setSelectedCuisine(selectedCuisine === cuisine ? null : cuisine)
-                            )
+                            <FilterChip
+                                key={cuisine}
+                                label={cuisine}
+                                selected={selectedCuisine === cuisine}
+                                onPress={() => setSelectedCuisine(selectedCuisine === cuisine ? null : cuisine)}
+                                testID={`filter-chip-${cuisine.toLowerCase().replace(/\s+/g, '-')}`}
+                            />
                         )}
                     </View>
                 </View>
@@ -283,7 +289,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     data={filteredAndSortedRestaurants}
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, paddingTop: 20 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 20 }}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}

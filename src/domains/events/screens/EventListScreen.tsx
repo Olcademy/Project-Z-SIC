@@ -10,6 +10,7 @@ import { EmptyState } from '@/ui/components/EmptyState';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { ScreenHeader } from '@/ui/components/ScreenHeader';
+import { FilterChip } from '@/ui/components/FilterChip';
 import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
 
@@ -17,13 +18,14 @@ type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc' | 'price-low' | 'price-high';
 
 export const EventListScreen: React.FC<Props> = ({ navigation }) => {
+    const theme = useTheme();
+
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
     const [dateFilter, setDateFilter] = useState<'upcoming' | 'week' | 'past' | null>(null);
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [showSortMenu, setShowSortMenu] = useState(false);
-    const theme = useTheme();
 
     const {
         data,
@@ -274,9 +276,13 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                     <View style={{ flexDirection: 'row', marginTop: 10, flexWrap: 'wrap' }}>
                         {categoryOptions.map((category) =>
-                            renderChip(category, categoryFilter === category, () =>
-                                setCategoryFilter(categoryFilter === category ? null : category)
-                            )
+                            <FilterChip
+                                key={category}
+                                label={category}
+                                selected={categoryFilter === category}
+                                onPress={() => setCategoryFilter(categoryFilter === category ? null : category)}
+                                testID={`filter-chip-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                            />
                         )}
                     </View>
                 </View>
@@ -291,7 +297,7 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                     data={filteredAndSortedEvents}
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, paddingTop: 20 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 20 }}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}

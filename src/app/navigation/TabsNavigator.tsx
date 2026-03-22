@@ -8,6 +8,7 @@ import { RestaurantListScreen } from '@/domains/restaurants/screens/RestaurantLi
 import { SettingsScreen } from '@/domains/settings/screens/SettingsScreen';
 import { TiffinDetailScreen } from '@/domains/tiffins/screens/TiffinDetailScreen';
 import { TiffinListScreen } from '@/domains/tiffins/screens/TiffinListScreen';
+import { EditProfileScreen } from '@/domains/settings/screens/EditProfileScreen';
 import { Ionicons } from '@expo/vector-icons';
 import type {
     EventsStackParamList,
@@ -47,6 +48,7 @@ const EventsStackNavigator = () => (
 const SettingsStackNavigator = () => (
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
         <SettingsStack.Screen name="Settings" component={SettingsScreen} />
+        <SettingsStack.Screen name="EditProfile" component={EditProfileScreen} />
     </SettingsStack.Navigator>
 );
 

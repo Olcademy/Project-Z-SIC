@@ -101,8 +101,6 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
         return [];
     }, [normalizedRestaurant]);
 
-    const theme = useTheme();
-
     if (isLoading) {
         return <LoadingSkeletonList count={2} />;
     }

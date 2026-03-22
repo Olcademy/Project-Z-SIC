@@ -10,6 +10,7 @@ import { useTheme } from '@/ui/context/ThemeContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'Search'>;
 
 export const SearchScreen: React.FC<Props> = ({ navigation }) => {
+    const theme = useTheme();
     const [query, setQuery] = useState('');
     const trimmedQuery = useMemo(() => query.trim(), [query]);
     const { data, isLoading } = useGlobalSearch(trimmedQuery);
@@ -37,8 +38,6 @@ export const SearchScreen: React.FC<Props> = ({ navigation }) => {
             params: { screen: 'EventDetail', params: { id: item._id } },
         });
     };
-
-    const theme = useTheme();
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>

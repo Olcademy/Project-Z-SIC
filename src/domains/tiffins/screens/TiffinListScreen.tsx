@@ -166,7 +166,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     const renderFooter = () => {
         if (!isFetchingNextPage) return null;
         return (
-            <View className="py-4">
+            <View style={{ paddingVertical: 16 }}>
                 <ActivityIndicator size="small" color="#02757A" />
             </View>
         );

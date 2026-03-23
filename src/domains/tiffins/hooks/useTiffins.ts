@@ -8,16 +8,38 @@ const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
 type TiffinListParams = Record<string, string | number | boolean | string[] | undefined>;
 
+type TiffinApiResponse = {
+    success?: boolean;
+    tiffins?: Tiffin[];
+    data?: Tiffin[];
+};
+
+const normalizeTiffin = (item: Tiffin): Tiffin => {
+    const name = item.kitchenName || item.name;
+    const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
+
+    return {
+        ...item,
+        _id: item._id || item.id || '',
+        name,
+        imageUrl: item.imageUrl || images[0],
+        images,
+        coverageAreas: item.deliveryCity || item.coverageAreas,
+        scheduleDays: item.menu?.serviceDays || item.scheduleDays,
+    } as Tiffin;
+};
+
 export const useTiffins = (params?: TiffinListParams) => {
     return useQuery({
         queryKey: ['tiffins', params],
         queryFn: async () => {
             try {
-                const response = await apiClient.get<{ data: Tiffin[] }>(ENDPOINTS.tiffins.list, { params });
-                const payload = response.data?.data ?? response.data;
+                const response = await apiClient.get<TiffinApiResponse>(ENDPOINTS.tiffins.list, { params });
+                const payload = response.data?.tiffins ?? response.data?.data ?? response.data;
                 const items = Array.isArray(payload) ? payload : [];
-                await storage.saveCache('tiffins:list', items);
-                return items;
+                const normalized = items.map((item) => normalizeTiffin(item));
+                await storage.saveCache('tiffins:list', normalized);
+                return normalized;
             } catch (error) {
                 const cached = await storage.getCache<Tiffin[]>('tiffins:list', LIST_CACHE_TTL);
                 return cached ?? [];
@@ -31,18 +53,19 @@ export const useTiffinsInfinite = (params?: TiffinListParams) => {
         queryKey: ['tiffins-infinite', params],
         queryFn: async ({ pageParam = 1 }) => {
             try {
-                const response = await apiClient.get<{ data: Tiffin[] }>(ENDPOINTS.tiffins.list, {
+                const response = await apiClient.get<TiffinApiResponse>(ENDPOINTS.tiffins.list, {
                     params: { ...params, page: pageParam, limit: 10 },
                 });
-                const payload = response.data?.data ?? response.data;
+                const payload = response.data?.tiffins ?? response.data?.data ?? response.data;
                 const items = Array.isArray(payload) ? payload : [];
+                const normalized = items.map((item) => normalizeTiffin(item));
 
                 if (pageParam === 1) {
-                    await storage.saveCache('tiffins:list', items);
+                    await storage.saveCache('tiffins:list', normalized);
                 }
 
                 return {
-                    items,
+                    items: normalized,
                     nextPage: items.length >= 10 ? pageParam + 1 : undefined,
                 };
             } catch (error) {
@@ -90,8 +113,8 @@ export const useTiffinDetail = (id: string) => {
     return useQuery({
         queryKey: ['tiffin', id],
         queryFn: async () => {
-            const response = await apiClient.get<{ data: TiffinDetail }>(ENDPOINTS.tiffins.detail(id));
-            return response.data?.data ?? response.data;
+            const response = await apiClient.get<TiffinDetail>(ENDPOINTS.tiffins.detail(id));
+            return normalizeTiffin((response.data as TiffinDetail) ?? (response.data?.data as TiffinDetail));
         },
         enabled: !!id,
     });

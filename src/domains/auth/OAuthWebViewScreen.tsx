@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { WebView } from 'react-native-webview';
 import type { WebViewErrorEvent } from 'react-native-webview/lib/WebViewTypes';
 import { RootStackParamList } from '@/app/navigation/types';
+import { AppConfig } from '@/platform/config'; // FIXED: API config
 
 const PROVIDER_LABELS: Record<string, string> = {
     google: 'Google',
@@ -24,7 +25,7 @@ export const OAuthWebViewScreen: React.FC<Props> = ({ route, navigation }) => {
 
     const targetUrl = useMemo(() => {
         const param = rememberMe ? 'true' : 'false';
-        return `https://project-z-backend-apis.onrender.com/api/${provider}?rememberMe=${param}`;
+        return `${AppConfig.API_BASE_URL}/api/${provider}?rememberMe=${param}`; // FIXED: API config
     }, [provider, rememberMe]);
 
     const providerLabel = PROVIDER_LABELS[provider] || 'Account';

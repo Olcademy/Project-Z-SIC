@@ -32,10 +32,10 @@ export const ENDPOINTS = {
         },
     },
     tiffins: {
-        list: '/api/tiffin/tiffins/filter',
+        list: '/api/tiffin',
         openNow: '/api/tiffin/tiffins/open-now',
         highRated: '/api/tiffin/tiffins/high-rated',
-        detail: (id: string) => `/api/get-tiffin/${id}`,
+        detail: (id: string) => `/api/tiffin/${id}`,
         offers: (id: string) => `/api/tiffin/offers/${id}`,
         favorites: '/api/tiffins/liked',
         favoriteOrders: '/api/orderFav',

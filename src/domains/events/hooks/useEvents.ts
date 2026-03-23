@@ -8,6 +8,28 @@ const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
 type EventListParams = Record<string, string | number | boolean | string[] | undefined>;
 
+const normalizeEvent = (item: Event): Event => {
+    const id = item._id || item.id || '';
+    const name = item.title || item.name;
+    const date = item.startAt || item.date;
+    const venue = item.venue;
+
+    const lat = typeof venue === 'object' ? venue?.lat : undefined;
+    const lng = typeof venue === 'object' ? venue?.lng : undefined;
+
+    return {
+        ...item,
+        _id: id,
+        name,
+        date,
+        location: {
+            lat,
+            lng,
+            address: typeof venue === 'object' ? venue?.address : undefined,
+        },
+    } as Event;
+};
+
 export const useEvents = (params?: EventListParams) => {
     return useQuery({
         queryKey: ['events', params],
@@ -16,8 +38,9 @@ export const useEvents = (params?: EventListParams) => {
                 const { data } = await apiClient.get(ENDPOINTS.events.list, { params });
                 const payload = data?.data ?? data;
                 const items = Array.isArray(payload) ? (payload as Event[]) : [];
-                await storage.saveCache('events:list', items);
-                return items;
+                const normalized = items.map((item) => normalizeEvent(item as Event & Record<string, unknown>));
+                await storage.saveCache('events:list', normalized);
+                return normalized;
             } catch (error) {
                 const cached = await storage.getCache<Event[]>('events:list', LIST_CACHE_TTL);
                 return cached ?? [];
@@ -36,13 +59,14 @@ export const useEventsInfinite = (params?: EventListParams) => {
                 });
                 const payload = data?.data ?? data;
                 const items = Array.isArray(payload) ? (payload as Event[]) : [];
+                const normalized = items.map((item) => normalizeEvent(item as Event & Record<string, unknown>));
 
                 if (pageParam === 1) {
-                    await storage.saveCache('events:list', items);
+                    await storage.saveCache('events:list', normalized);
                 }
 
                 return {
-                    items,
+                    items: normalized,
                     nextPage: items.length >= 10 ? pageParam + 1 : undefined,
                 };
             } catch (error) {
@@ -65,7 +89,8 @@ export const useEventDetail = (id: string) => {
         queryKey: ['event', id],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.events.detail(id));
-            return (data.data || data) as Event;
+            const payload = (data.data || data) as Event;
+            return normalizeEvent(payload as Event & Record<string, unknown>);
         },
         enabled: !!id,
     });

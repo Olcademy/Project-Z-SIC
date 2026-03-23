@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
@@ -10,9 +11,9 @@ import { EmptyState } from '@/ui/components/EmptyState';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { ScreenHeader } from '@/ui/components/ScreenHeader';
-import { FilterChip } from '@/ui/components/FilterChip';
 import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
+import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc' | 'price-low' | 'price-high';
@@ -25,7 +26,17 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
     const [dateFilter, setDateFilter] = useState<'upcoming' | 'week' | 'past' | null>(null);
     const [sortBy, setSortBy] = useState<SortOption>('default');
-    const [showSortMenu, setShowSortMenu] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
+
+    const sortOptions = [
+        { value: 'default', label: 'Default' },
+        { value: 'date-asc', label: 'Date: Nearest First' },
+        { value: 'date-desc', label: 'Date: Latest First' },
+        { value: 'price-low', label: 'Price: Low to High' },
+        { value: 'price-high', label: 'Price: High to Low' },
+    ];
+
+    const activeSortLabel = sortOptions.find(o => o.value === sortBy)?.label ?? 'Sort';
 
     const {
         data,
@@ -208,32 +219,13 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const sortOptions = [
-        { value: 'default', label: 'Default' },
-        { value: 'date-asc', label: 'Date: Nearest First' },
-        { value: 'date-desc', label: 'Date: Latest First' },
-        { value: 'price-low', label: 'Price: Low to High' },
-        { value: 'price-high', label: 'Price: High to Low' },
-    ];
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
             <View style={{ backgroundColor: theme.headerBgEvents, paddingHorizontal: 20, paddingTop: 48, paddingBottom: 24, overflow: 'visible' }}>
                 <View style={{ position: 'absolute', right: 0, top: 0, height: 112, width: 112, borderRadius: 56, backgroundColor: theme.headerCircleEvents }} />
                 <View style={{ position: 'absolute', left: 0, bottom: 0, height: 96, width: 96, borderRadius: 48, backgroundColor: theme.headerCircleEvents }} />
-                <ScreenHeader
-                    title="Events"
-                    subtitle="Live shows and community meetups"
-                    rightSlot={
-                        <TouchableOpacity
-                            data-testid="sort-button"
-                            onPress={() => setShowSortMenu(!showSortMenu)}
-                            style={{ backgroundColor: theme.card, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 }}
-                        >
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: theme.sectionLabel }}>Sort ▼</Text>
-                        </TouchableOpacity>
-                    }
-                />
+                <ScreenHeader title="Events" subtitle="Live shows and community meetups" />
                 <View style={{ marginTop: 16 }}>
                     <TextInput
                         data-testid="search-input"
@@ -246,46 +238,58 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
             </View>
 
-            {showSortMenu && (
-                <View style={{ position: 'absolute', top: 100, right: 20, zIndex: 100, backgroundColor: theme.card, borderRadius: 16, elevation: 8, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, minWidth: 200 }}>
-                    {sortOptions.map((option) => (
-                        <TouchableOpacity
-                            key={option.value}
-                            data-testid={`sort-option-${option.value}`}
-                            style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: sortBy === option.value ? '#efe9f6' : 'transparent' }}
-                            onPress={() => { setSortBy(option.value as SortOption); setShowSortMenu(false); }}
-                        >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: sortBy === option.value ? '#02757A' : theme.text }}>
-                                {option.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
+            <FilterBottomSheet
+                visible={showFilters}
+                onClose={() => setShowFilters(false)}
+                onClear={() => { setCategoryFilter(null); setDateFilter(null); setSortBy('default'); }}
+                accentColor="#7c3aed"
+                sections={[
+                    {
+                        title: 'Sort by',
+                        options: sortOptions,
+                        selected: sortBy,
+                        onSelect: (v) => setSortBy(v as SortOption),
+                    },
+                    {
+                        title: 'Date',
+                        options: [
+                            { value: 'upcoming', label: 'Upcoming (30 days)' },
+                            { value: 'week', label: 'This Week' },
+                            { value: 'past', label: 'Past Events' },
+                        ],
+                        selected: dateFilter,
+                        onSelect: (v) => setDateFilter(dateFilter === v ? null : v as any),
+                    },
+                    {
+                        title: 'Category',
+                        options: categoryOptions.map(c => ({ value: c, label: c })),
+                        selected: categoryFilter,
+                        onSelect: (v) => setCategoryFilter(categoryFilter === v ? null : v),
+                    },
+                ]}
+            />
 
-            <View style={{ paddingHorizontal: 20, marginTop: -16, zIndex: 1 }}>
-                <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.sectionLabel }}>Quick filters</Text>
-                        <Text style={{ fontSize: 12, color: theme.subtext }}>{filteredCount} events</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', marginTop: 12 }}>
-                        {renderChip('Upcoming', dateFilter === 'upcoming', () => setDateFilter(dateFilter === 'upcoming' ? null : 'upcoming'))}
-                        {renderChip('This Week', dateFilter === 'week', () => setDateFilter(dateFilter === 'week' ? null : 'week'))}
-                        {renderChip('Past', dateFilter === 'past', () => setDateFilter(dateFilter === 'past' ? null : 'past'))}
-                    </View>
-                    <View style={{ flexDirection: 'row', marginTop: 10, flexWrap: 'wrap' }}>
-                        {categoryOptions.map((category) =>
-                            <FilterChip
-                                key={category}
-                                label={category}
-                                selected={categoryFilter === category}
-                                onPress={() => setCategoryFilter(categoryFilter === category ? null : category)}
-                                testID={`filter-chip-${category.toLowerCase().replace(/\s+/g, '-')}`}
-                            />
-                        )}
-                    </View>
-                </View>
+            <View style={{ backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' }}>
+                    <TouchableOpacity
+                        onPress={() => setShowFilters(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: (dateFilter || categoryFilter) ? '#7c3aed' : theme.chipBg, borderColor: (dateFilter || categoryFilter) ? '#7c3aed' : theme.chipBorder }}
+                    >
+                        <Ionicons name="options-outline" size={13} color={(dateFilter || categoryFilter) ? '#fff' : theme.chipText} style={{ marginRight: 4 }} />
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: (dateFilter || categoryFilter) ? '#fff' : theme.chipText }}>Filters{(dateFilter || categoryFilter) ? ' •' : ''}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setShowFilters(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: sortBy !== 'default' ? '#7c3aed' : theme.chipBg, borderColor: sortBy !== 'default' ? '#7c3aed' : theme.chipBorder }}
+                    >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: sortBy !== 'default' ? '#fff' : theme.chipText }}>⇅ {sortBy !== 'default' ? activeSortLabel : 'Sort'}</Text>
+                    </TouchableOpacity>
+                    <View style={{ width: 1, height: 20, backgroundColor: theme.border, marginRight: 8 }} />
+                    {renderChip('Upcoming', dateFilter === 'upcoming', () => setDateFilter(dateFilter === 'upcoming' ? null : 'upcoming'))}
+                    {renderChip('This Week', dateFilter === 'week', () => setDateFilter(dateFilter === 'week' ? null : 'week'))}
+                    {renderChip('Past', dateFilter === 'past', () => setDateFilter(dateFilter === 'past' ? null : 'past'))}
+                    {categoryOptions.map((category) => renderChip(category, categoryFilter === category, () => setCategoryFilter(categoryFilter === category ? null : category)))}
+                </ScrollView>
             </View>
 
             {isLoading ? (

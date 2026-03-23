@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TiffinStackParamList } from '@/app/navigation/types';
@@ -10,9 +11,9 @@ import { EmptyState } from '@/ui/components/EmptyState';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { ScreenHeader } from '@/ui/components/ScreenHeader';
-import { FilterChip } from '@/ui/components/FilterChip';
 import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
+import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 
 type Props = NativeStackScreenProps<TiffinStackParamList, 'TiffinList'>;
 type SortOption = 'default' | 'price-low' | 'price-high' | 'veg-first';
@@ -23,9 +24,19 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [vegOnly, setVegOnly] = useState(false);
-    const [priceFilter, setPriceFilter] = useState<'budget' | 'mid' | 'premium' | null>(null);
+    const [topRated, setTopRated] = useState(false);
+    const [hasOffers, setHasOffers] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('default');
-    const [showSortMenu, setShowSortMenu] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
+
+    const sortOptions = [
+        { value: 'default', label: 'Default' },
+        { value: 'price-low', label: 'Price: Low to High' },
+        { value: 'price-high', label: 'Price: High to Low' },
+        { value: 'veg-first', label: 'Veg Priority' },
+    ];
+
+    const activeSortLabel = sortOptions.find(o => o.value === sortBy)?.label ?? 'Sort';
 
     const {
         data,
@@ -60,19 +71,20 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
 
     useEffect(() => {
         saveFilters();
-    }, [vegOnly, priceFilter, sortBy]);
+    }, [vegOnly, topRated, hasOffers, sortBy]);
 
     const loadFilters = async () => {
         const saved = await storage.getFilters('tiffins');
         if (saved) {
             if (saved.vegOnly !== undefined) setVegOnly(saved.vegOnly);
-            if (saved.priceFilter) setPriceFilter(saved.priceFilter);
+            if (saved.topRated !== undefined) setTopRated(saved.topRated);
+            if (saved.hasOffers !== undefined) setHasOffers(saved.hasOffers);
             if (saved.sortBy) setSortBy(saved.sortBy);
         }
     };
 
     const saveFilters = async () => {
-        await storage.saveFilters('tiffins', { vegOnly, priceFilter, sortBy });
+        await storage.saveFilters('tiffins', { vegOnly, topRated, hasOffers, sortBy });
     };
 
     useFocusEffect(
@@ -100,13 +112,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 .toLowerCase();
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (vegOnly && !item.vegOnly) return false;
-
-            const priceValue = getPriceValue(item);
-            if (priceFilter && priceValue !== null) {
-                if (priceFilter === 'budget' && priceValue > 120) return false;
-                if (priceFilter === 'mid' && (priceValue <= 120 || priceValue > 250)) return false;
-                if (priceFilter === 'premium' && priceValue <= 250) return false;
-            }
+            if (topRated && (item.rating ?? 0) < 4.0) return false;
+            if (hasOffers && !item.hasOffer && !item.offer) return false;
             return true;
         });
 
@@ -131,7 +138,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         }
 
         return filtered;
-    }, [allTiffins, debouncedQuery, vegOnly, priceFilter, sortBy]);
+    }, [allTiffins, debouncedQuery, vegOnly, topRated, hasOffers, sortBy]);
 
     const renderChip = (label: string, active: boolean, onPress: () => void) => (
         <TouchableOpacity
@@ -180,31 +187,13 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const sortOptions = [
-        { value: 'default', label: 'Default' },
-        { value: 'price-low', label: 'Price: Low to High' },
-        { value: 'price-high', label: 'Price: High to Low' },
-        { value: 'veg-first', label: 'Veg Priority' },
-    ];
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
             <View style={{ backgroundColor: theme.headerBgTiffin, paddingHorizontal: 20, paddingTop: 48, paddingBottom: 24, overflow: 'visible' }}>
                 <View style={{ position: 'absolute', right: 0, top: 0, height: 112, width: 112, borderRadius: 56, backgroundColor: theme.headerCircleTiffin }} />
                 <View style={{ position: 'absolute', left: 0, bottom: 0, height: 96, width: 96, borderRadius: 48, backgroundColor: theme.headerCircleTiffin }} />
-                <ScreenHeader
-                    title="Tiffin"
-                    subtitle="Home-style meal services"
-                    rightSlot={
-                        <TouchableOpacity
-                            data-testid="sort-button"
-                            onPress={() => setShowSortMenu(!showSortMenu)}
-                            style={{ backgroundColor: theme.card, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 }}
-                        >
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: theme.sectionLabel }}>Sort ▼</Text>
-                        </TouchableOpacity>
-                    }
-                />
+                <ScreenHeader title="Tiffin" subtitle="Home-style meal services" />
                 <View style={{ marginTop: 16 }}>
                     <TextInput
                         data-testid="search-input"
@@ -217,33 +206,48 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
             </View>
 
-            {showSortMenu && (
-                <View style={{ position: 'absolute', top: 100, right: 20, zIndex: 100, backgroundColor: theme.card, borderRadius: 16, elevation: 8, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, minWidth: 200 }}>
-                    {sortOptions.map((option) => (
-                        <TouchableOpacity
-                            key={option.value}
-                            data-testid={`sort-option-${option.value}`}
-                            style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: sortBy === option.value ? '#f5efe8' : 'transparent' }}
-                            onPress={() => { setSortBy(option.value as SortOption); setShowSortMenu(false); }}
-                        >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: sortBy === option.value ? '#02757A' : theme.text }}>
-                                {option.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
+            <FilterBottomSheet
+                visible={showFilters}
+                onClose={() => setShowFilters(false)}
+                onClear={() => { setVegOnly(false); setTopRated(false); setHasOffers(false); setSortBy('default'); }}
+                accentColor="#02757A"
+                sections={[
+                    {
+                        title: 'Sort by',
+                        options: sortOptions,
+                        selected: sortBy,
+                        onSelect: (v) => setSortBy(v as SortOption),
+                    },
+                    {
+                        title: 'Diet',
+                        options: [{ value: 'veg', label: 'Veg Only' }],
+                        selected: vegOnly ? 'veg' : null,
+                        onSelect: () => setVegOnly(p => !p),
+                    },
 
-            <View style={{ paddingHorizontal: 20, marginTop: -16, zIndex: 1 }}>
-                <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: theme.sectionLabel }}>Quick filters</Text>
-                    <View style={{ flexDirection: 'row', marginTop: 12 }}>
-                        {renderChip('Veg', vegOnly, () => setVegOnly((prev) => !prev))}
-                        {renderChip('Budget', priceFilter === 'budget', () => setPriceFilter(priceFilter === 'budget' ? null : 'budget'))}
-                        {renderChip('Mid', priceFilter === 'mid', () => setPriceFilter(priceFilter === 'mid' ? null : 'mid'))}
-                        {renderChip('Premium', priceFilter === 'premium', () => setPriceFilter(priceFilter === 'premium' ? null : 'premium'))}
-                    </View>
-                </View>
+                ]}
+            />
+
+            <View style={{ backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' }}>
+                    <TouchableOpacity
+                        onPress={() => setShowFilters(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: (vegOnly || topRated || hasOffers) ? '#02757A' : theme.chipBg, borderColor: (vegOnly || topRated || hasOffers) ? '#02757A' : theme.chipBorder }}
+                    >
+                        <Ionicons name="options-outline" size={13} color={(vegOnly || topRated || hasOffers) ? '#fff' : theme.chipText} style={{ marginRight: 4 }} />
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: (vegOnly || topRated || hasOffers) ? '#fff' : theme.chipText }}>Filters{(vegOnly || topRated || hasOffers) ? ' •' : ''}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setShowFilters(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: sortBy !== 'default' ? '#02757A' : theme.chipBg, borderColor: sortBy !== 'default' ? '#02757A' : theme.chipBorder }}
+                    >
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: sortBy !== 'default' ? '#fff' : theme.chipText }}>⇅ {sortBy !== 'default' ? activeSortLabel : 'Sort'}</Text>
+                    </TouchableOpacity>
+                    <View style={{ width: 1, height: 20, backgroundColor: theme.border, marginRight: 8 }} />
+                    {renderChip('Veg', vegOnly, () => setVegOnly(p => !p))}
+                    {renderChip('Ratings 4.0+', topRated, () => setTopRated(p => !p))}
+                    {renderChip('Offers', hasOffers, () => setHasOffers(p => !p))}
+                </ScrollView>
             </View>
 
             {isLoading ? (
@@ -272,7 +276,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                             onAction={() => {
                                 setQuery('');
                                 setVegOnly(false);
-                                setPriceFilter(null);
+                                setTopRated(false);
+                                setHasOffers(false);
                                 setSortBy('default');
                             }}
                         />

@@ -1,33 +1,37 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RestaurantsStackParamList } from '@/app/navigation/types';
 import { useRestaurantDetail } from '../hooks/useRestaurants';
 import { RestaurantDetail, RestaurantMenuItem, RestaurantMenuSection } from '@/domains/restaurants/types';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import { openInMaps } from '@/services/maps/googleMaps';
 import { ErrorState } from '@/ui/components/ErrorState';
-import { ImageCarousel } from '@/ui/components/ImageCarousel';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
-import { useTheme } from '@/ui/context/ThemeContext';
+import { useTheme } from '@/ui/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantDetail'>;
 
-export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
+export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const { id } = route.params;
     const { data: restaurant, isLoading, isError, refetch } = useRestaurantDetail(id);
     const { data: featureFlags } = useFeatureFlags();
-    const theme = useTheme();
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const normalizedRestaurant = restaurant as RestaurantDetail | undefined;
 
     const images = useMemo(() => {
         if (!normalizedRestaurant) return [];
         return [
-            ...(normalizedRestaurant.images || []),
             normalizedRestaurant.imageUrl,
+            ...(normalizedRestaurant.images || []),
+            ...(normalizedRestaurant.image_urls || []),
         ].filter(Boolean) as string[];
     }, [normalizedRestaurant]);
+
+    const heroImageUrl = images[0];
 
     useFocusEffect(
         useCallback(() => {
@@ -75,22 +79,6 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
         return sections;
     }, [normalizedRestaurant]);
 
-    const services = useMemo(() => {
-        if (!normalizedRestaurant) return [];
-        return [
-            ...(normalizedRestaurant.serviceTypes || []),
-            ...(normalizedRestaurant.badges || []),
-        ].filter(Boolean);
-    }, [normalizedRestaurant]);
-
-    const hours = useMemo(() => {
-        if (!normalizedRestaurant) return [];
-        const hoursData = normalizedRestaurant.openingHours || normalizedRestaurant.hours;
-        if (Array.isArray(hoursData)) return hoursData;
-        if (typeof hoursData === 'string') return [hoursData];
-        return [];
-    }, [normalizedRestaurant]);
-
     const cuisineTags = useMemo(() => {
         if (!normalizedRestaurant) return [];
         if (Array.isArray(normalizedRestaurant.cuisineTags)) return normalizedRestaurant.cuisineTags;
@@ -101,6 +89,45 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
         return [];
     }, [normalizedRestaurant]);
 
+    const locationText = useMemo(() => {
+        if (!normalizedRestaurant) return '';
+        return (
+            normalizedRestaurant.address ||
+            normalizedRestaurant.location?.address ||
+            normalizedRestaurant.restaurantInfo?.address ||
+            ''
+        );
+    }, [normalizedRestaurant]);
+
+    const ratingText = useMemo(() => {
+        if (!normalizedRestaurant) return '—';
+        const candidate =
+            (normalizedRestaurant as any).rating ??
+            normalizedRestaurant.restaurantInfo?.ratings?.overall;
+        if (candidate === undefined || candidate === null) return '—';
+        const value = typeof candidate === 'string' ? Number(candidate) : candidate;
+        if (typeof value === 'number' && Number.isFinite(value)) return value.toFixed(1);
+        return String(candidate);
+    }, [normalizedRestaurant]);
+
+    const cuisinePrimary = cuisineTags[0] || '—';
+
+    const deliveryTimeText = useMemo(() => {
+        if (!normalizedRestaurant) return '—';
+        const candidate =
+            (normalizedRestaurant as any).deliveryTime ??
+            (normalizedRestaurant as any).delivery_time ??
+            (normalizedRestaurant as any).deliveryTimeText;
+        if (candidate === undefined || candidate === null || candidate === '') return '—';
+        return String(candidate);
+    }, [normalizedRestaurant]);
+
+    const menuPreview = useMemo(() => {
+        if (menuSections.length === 0) return [] as RestaurantMenuItem[];
+        const firstSection = menuSections[0];
+        return (firstSection.items || []).slice(0, 4);
+    }, [menuSections]);
+
     if (isLoading) {
         return <LoadingSkeletonList count={2} />;
     }
@@ -109,99 +136,180 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route }) => {
         return <ErrorState message="Failed to load restaurant details." onRetry={refetch} />;
     }
 
-    return (
-        <ScrollView style={{ flex: 1, backgroundColor: theme.bg }}>
-            <View style={{ paddingHorizontal: 20, paddingVertical: 24 }}>
-                {images.length > 0 && <ImageCarousel images={images} />}
+    const orderingEnabled = Boolean(featureFlags?.enableOrdering);
 
-                {/* Hero card */}
-                <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 20, marginTop: 20, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
-                    <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }}>{normalizedRestaurant.name || 'Unnamed Restaurant'}</Text>
-                    {cuisineTags.length > 0 && (
-                        <Text style={{ fontSize: 13, color: theme.subtext, marginTop: 6 }}>{cuisineTags.join(' • ')}</Text>
-                    )}
-                    {normalizedRestaurant.priceRange && (
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#02757A', marginTop: 6 }}>{normalizedRestaurant.priceRange}</Text>
-                    )}
-                    {normalizedRestaurant.description && (
-                        <Text style={{ fontSize: 14, color: theme.subtext, marginTop: 12, lineHeight: 22 }}>{normalizedRestaurant.description}</Text>
-                    )}
-                    {!featureFlags?.enableOrdering && (
-                        <View style={{ marginTop: 14, backgroundColor: '#fffbeb', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#fde68a' }}>
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#b45309' }}>⏳ Ordering Coming Soon</Text>
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
+                {/* Top image section */}
+                <View style={{ height: 200, width: '100%', backgroundColor: colors.surface }}>
+                    {heroImageUrl ? (
+                        <Image source={{ uri: heroImageUrl }} style={{ height: '100%', width: '100%' }} resizeMode="cover" />
+                    ) : (
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>
                         </View>
                     )}
+
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{
+                            position: 'absolute',
+                            top: insets.top + 10,
+                            left: 16,
+                            height: 40,
+                            width: 40,
+                            borderRadius: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                    >
+                        <Ionicons name="chevron-back" size={22} color={colors.text} />
+                    </TouchableOpacity>
                 </View>
 
-                {/* Services */}
-                {services.length > 0 && (
-                    <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 20, marginTop: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 12 }}>Services</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                            {services.map((service) => (
-                                <View key={service} style={{ backgroundColor: theme.chipBg, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.chipBorder }}>
-                                    <Text style={{ fontSize: 12, fontWeight: '600', color: theme.chipText }}>{service}</Text>
-                                </View>
-                            ))}
+                <View style={{ padding: 16 }}>
+                    {/* Title section */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text }}>
+                            {normalizedRestaurant.name || 'Unnamed Restaurant'}
+                        </Text>
+                        <Text style={{ marginTop: 6, fontSize: 13, fontWeight: '600', color: colors.textMuted }}>
+                            {cuisineTags.length > 0 ? cuisineTags.join(' • ') : '—'}
+                        </Text>
+                        {!!locationText && (
+                            <Text style={{ marginTop: 6, fontSize: 12, color: colors.textMuted }} numberOfLines={2}>
+                                {locationText}
+                            </Text>
+                        )}
+                    </View>
+
+                    {/* Info row */}
+                    <View
+                        style={{
+                            marginBottom: 16,
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            borderRadius: 16,
+                            paddingVertical: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Rating</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>{ratingText}</Text>
+                        </View>
+                        <View style={{ width: 1, height: 28, backgroundColor: colors.border }} />
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Cuisine</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                {cuisinePrimary}
+                            </Text>
+                        </View>
+                        <View style={{ width: 1, height: 28, backgroundColor: colors.border }} />
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Delivery</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                {deliveryTimeText}
+                            </Text>
                         </View>
                     </View>
-                )}
 
-                {/* Hours */}
-                {hours.length > 0 && (
-                    <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 20, marginTop: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 12 }}>Hours</Text>
-                        {hours.map((line) => (
-                            <Text key={line} style={{ fontSize: 13, color: theme.subtext, marginBottom: 4 }}>{line}</Text>
-                        ))}
+                    {/* About */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 }}>About</Text>
+                        <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14 }}>
+                            <Text style={{ fontSize: 14, lineHeight: 22, color: colors.textMuted }}>
+                                {normalizedRestaurant.description || 'No description available.'}
+                            </Text>
+                        </View>
                     </View>
-                )}
 
-                {/* Location */}
-                {(normalizedRestaurant.address || normalizedRestaurant.location?.address) && (
-                    <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 20, marginTop: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 8 }}>Location</Text>
-                        <Text style={{ fontSize: 13, color: theme.subtext, lineHeight: 20 }}>{normalizedRestaurant.address || normalizedRestaurant.location?.address}</Text>
-                    </View>
-                )}
-
-                {/* Menu */}
-                {menuSections.length > 0 && (
-                    <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 20, marginTop: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 14 }}>Menu</Text>
-                        {menuSections.map((section) => (
-                            <View key={section.title} style={{ marginBottom: 16 }}>
-                                <View style={{ backgroundColor: theme.chipBg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 10 }}>
-                                    <Text style={{ fontSize: 13, fontWeight: '700', color: theme.chipText }}>{section.title}</Text>
-                                </View>
-                                {section.items.map((item, index) => (
-                                    <View key={`${section.title}-${index}`} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: index < section.items.length - 1 ? 1 : 0, borderBottomColor: theme.border }}>
-                                        <View style={{ flex: 1, marginRight: 12 }}>
-                                            <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>{item.name}</Text>
-                                            {item.description && (
-                                                <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 3, lineHeight: 18 }}>{item.description}</Text>
+                    {/* Menu preview (optional) */}
+                    {menuPreview.length > 0 && (
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 }}>Menu preview</Text>
+                            <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14 }}>
+                                {menuPreview.map((item, index) => (
+                                    <View
+                                        key={`${item.name}-${index}`}
+                                        style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'flex-start',
+                                            justifyContent: 'space-between',
+                                            paddingVertical: 10,
+                                            borderBottomWidth: index < menuPreview.length - 1 ? 1 : 0,
+                                            borderBottomColor: colors.border,
+                                        }}
+                                    >
+                                        <View style={{ flex: 1, paddingRight: 12 }}>
+                                            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                                {item.name}
+                                            </Text>
+                                            {!!item.description && (
+                                                <Text style={{ marginTop: 3, fontSize: 12, lineHeight: 18, color: colors.textMuted }} numberOfLines={2}>
+                                                    {item.description}
+                                                </Text>
                                             )}
                                         </View>
                                         {item.price !== undefined && item.price !== null && (
-                                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#02757A' }}>₹{item.price}</Text>
+                                            <Text style={{ fontSize: 13, fontWeight: '800', color: colors.primary }}>₹{item.price}</Text>
                                         )}
                                     </View>
                                 ))}
                             </View>
-                        ))}
-                    </View>
-                )}
+                        </View>
+                    )}
 
-                {/* Navigate button */}
-                {normalizedRestaurant.location?.lat && normalizedRestaurant.location?.lng && (
-                    <TouchableOpacity
-                        style={{ marginTop: 20, backgroundColor: '#02757A', paddingVertical: 16, borderRadius: 20, alignItems: 'center', shadowColor: '#02757A', shadowOpacity: 0.35, shadowRadius: 12, elevation: 6 }}
-                        onPress={() => openInMaps(normalizedRestaurant.location!.lat!, normalizedRestaurant.location!.lng!)}
-                    >
-                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>🗺️  Navigate in Google Maps</Text>
-                    </TouchableOpacity>
-                )}
+                    {/* Coming soon note */}
+                    {!orderingEnabled && (
+                        <Text style={{ marginBottom: 16, fontSize: 12, color: colors.textMuted }}>
+                            Ordering is coming soon.
+                        </Text>
+                    )}
+                </View>
+            </ScrollView>
+
+            {/* Bottom action button */}
+            <View
+                style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: 16,
+                    paddingBottom: Math.max(16, insets.bottom + 16),
+                    backgroundColor: colors.background,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                }}
+            >
+                <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Order now"
+                    activeOpacity={0.9}
+                    disabled={!orderingEnabled}
+                    onPress={() => {}}
+                    style={{
+                        height: 50,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: orderingEnabled ? colors.primary : colors.border,
+                    }}
+                >
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: orderingEnabled ? '#FFFFFF' : colors.textMuted }}>
+                        Order Now
+                    </Text>
+                </TouchableOpacity>
             </View>
-        </ScrollView>
+        </View>
     );
 };

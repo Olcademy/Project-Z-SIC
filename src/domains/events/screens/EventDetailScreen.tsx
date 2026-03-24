@@ -1,34 +1,37 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
 import { useEventDetail } from '../hooks/useEvents';
 import { Event } from '@/domains/events/types';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import { openInMaps } from '@/services/maps/googleMaps';
 import { ErrorState } from '@/ui/components/ErrorState';
-import { ImageCarousel } from '@/ui/components/ImageCarousel';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { useTheme } from '@/ui/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventDetail'>;
 
-export const EventDetailScreen: React.FC<Props> = ({ route }) => {
+export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const { id } = route.params;
     const { data: event, isLoading, isError, refetch } = useEventDetail(id);
     const { data: featureFlags } = useFeatureFlags();
-    const { isDark, colors } = useTheme();
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
 
     const normalizedEvent = event as Event | undefined;
 
     const images = useMemo(() => {
         if (!normalizedEvent) return [];
         return [
-            ...(normalizedEvent.images || []),
             normalizedEvent.imageUrl,
+            ...(normalizedEvent.images || []),
         ].filter(Boolean) as string[];
     }, [normalizedEvent]);
+
+    const heroImageUrl = images[0];
 
     useFocusEffect(
         useCallback(() => {
@@ -55,6 +58,22 @@ export const EventDetailScreen: React.FC<Props> = ({ route }) => {
         return String(venue);
     };
 
+    const venueText = useMemo(() => {
+        if (!normalizedEvent) return '';
+        return formatVenue(normalizedEvent.venue) || normalizedEvent.location?.address || '';
+    }, [normalizedEvent]);
+
+    const dateObj = useMemo(() => {
+        if (!normalizedEvent) return null;
+        const candidate = normalizedEvent.startAt || normalizedEvent.date;
+        if (!candidate) return null;
+        const parsed = new Date(candidate);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }, [normalizedEvent]);
+
+    const dateText = dateObj ? dateObj.toLocaleDateString() : '—';
+    const timeText = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+
     if (isLoading) {
         return <LoadingSkeletonList count={2} />;
     }
@@ -65,57 +84,175 @@ export const EventDetailScreen: React.FC<Props> = ({ route }) => {
 
     const ended = isPastEvent(normalizedEvent.date);
 
-    return (
-        <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-            <View className="px-4 py-6">
-                {images.length > 0 && <ImageCarousel images={images} />}
+    const bookingEnabled = Boolean(featureFlags?.enableBooking) && !ended;
 
-                <View
-                    className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 shadow-sm mt-5"
-                    style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
-                >
-                    <Text className="text-2xl font-bold text-gray-900 dark:text-gray-50">{normalizedEvent.name || normalizedEvent.title || 'Unnamed Event'}</Text>
-                    {ended && (
-                        <View className="mt-2 bg-red-50 dark:bg-red-950 px-2 py-1 rounded-full self-start">
-                            <Text className="text-xs font-semibold text-red-700 dark:text-red-200">Event Ended</Text>
+    const hasExtraDetails = Boolean(normalizedEvent.priceInfo || normalizedEvent.price || normalizedEvent.endAt);
+
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
+                {/* Top image section */}
+                <View style={{ height: 200, width: '100%', backgroundColor: colors.surface }}>
+                    {heroImageUrl ? (
+                        <Image source={{ uri: heroImageUrl }} style={{ height: '100%', width: '100%' }} resizeMode="cover" />
+                    ) : (
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>
                         </View>
                     )}
-                    {normalizedEvent.category && (
-                        <Text className="text-xs font-semibold text-[#02757A] mt-2">{normalizedEvent.category}</Text>
-                    )}
-                    <View className="mt-4 bg-gray-50 dark:bg-gray-950 rounded-2xl px-3 py-2">
-                        {normalizedEvent.date && (
-                            <Text className="text-sm text-gray-600 dark:text-gray-300">{new Date(normalizedEvent.date).toLocaleString()}</Text>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{
+                            position: 'absolute',
+                            top: insets.top + 10,
+                            left: 16,
+                            height: 40,
+                            width: 40,
+                            borderRadius: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                    >
+                        <Ionicons name="chevron-back" size={22} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ padding: 16 }}>
+                    {/* Title section */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text }}>
+                            {normalizedEvent.name || normalizedEvent.title || 'Unnamed Event'}
+                        </Text>
+                        <Text style={{ marginTop: 6, fontSize: 13, fontWeight: '600', color: colors.textMuted }}>
+                            {normalizedEvent.category || '—'}
+                        </Text>
+                        {!!venueText && (
+                            <Text style={{ marginTop: 6, fontSize: 12, color: colors.textMuted }} numberOfLines={2}>
+                                {venueText}
+                            </Text>
                         )}
-                        {normalizedEvent.venue && (
-                            <Text className="text-sm text-gray-600 dark:text-gray-300 mt-1">Venue: {formatVenue(normalizedEvent.venue)}</Text>
+                        {ended && (
+                            <Text style={{ marginTop: 8, fontSize: 12, color: colors.textMuted }}>This event has ended.</Text>
                         )}
                     </View>
 
-                    {(normalizedEvent.priceInfo || normalizedEvent.price) && (
-                        <Text className="text-sm font-semibold text-[#02757A] mt-4">Price: {normalizedEvent.priceInfo || normalizedEvent.price}</Text>
-                    )}
+                    {/* Info row */}
+                    <View
+                        style={{
+                            marginBottom: 16,
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            borderRadius: 16,
+                            paddingVertical: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Date</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                {dateText}
+                            </Text>
+                        </View>
+                        <View style={{ width: 1, height: 28, backgroundColor: colors.border }} />
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Time</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                {timeText}
+                            </Text>
+                        </View>
+                        <View style={{ width: 1, height: 28, backgroundColor: colors.border }} />
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 3 }}>Venue</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                {venueText || '—'}
+                            </Text>
+                        </View>
+                    </View>
 
-                    {normalizedEvent.description && (
-                        <Text className="text-base text-gray-700 dark:text-gray-200 mt-4 leading-6">{normalizedEvent.description}</Text>
+                    {/* About */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 }}>About</Text>
+                        <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14 }}>
+                            <Text style={{ fontSize: 14, lineHeight: 22, color: colors.textMuted }}>
+                                {normalizedEvent.description || 'No description available.'}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Event details (optional) */}
+                    {hasExtraDetails && (
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 }}>Event details</Text>
+                            <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14 }}>
+                                {(normalizedEvent.priceInfo || normalizedEvent.price) && (
+                                    <View style={{ marginBottom: normalizedEvent.endAt ? 10 : 0 }}>
+                                        <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 2 }}>Price</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>
+                                            {normalizedEvent.priceInfo || normalizedEvent.price}
+                                        </Text>
+                                    </View>
+                                )}
+                                {normalizedEvent.endAt && (
+                                    <View>
+                                        <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 2 }}>Ends</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>
+                                            {new Date(normalizedEvent.endAt).toLocaleString()}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
                     )}
 
                     {!featureFlags?.enableBooking && (
-                        <View className="mt-4 bg-amber-50 dark:bg-amber-950 px-3 py-2 rounded-2xl self-start">
-                            <Text className="text-xs font-semibold text-amber-700 dark:text-amber-200">Booking Coming Soon</Text>
-                        </View>
+                        <Text style={{ marginBottom: 16, fontSize: 12, color: colors.textMuted }}>
+                            Booking is coming soon.
+                        </Text>
                     )}
                 </View>
+            </ScrollView>
 
-                {normalizedEvent.location?.lat && normalizedEvent.location?.lng && (
-                    <TouchableOpacity
-                        className="mt-6 bg-[#02757A] px-4 py-4 rounded-2xl items-center"
-                        onPress={() => openInMaps(normalizedEvent.location!.lat!, normalizedEvent.location!.lng!)}
-                    >
-                        <Text className="text-white font-semibold text-base">Navigate to venue</Text>
-                    </TouchableOpacity>
-                )}
+            {/* Bottom action button */}
+            <View
+                style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: 16,
+                    paddingBottom: Math.max(16, insets.bottom + 16),
+                    backgroundColor: colors.background,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                }}
+            >
+                <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Book now"
+                    activeOpacity={0.9}
+                    disabled={!bookingEnabled}
+                    onPress={() => {}}
+                    style={{
+                        height: 50,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: bookingEnabled ? colors.primary : colors.border,
+                    }}
+                >
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: bookingEnabled ? '#FFFFFF' : colors.textMuted }}>
+                        Book Now
+                    </Text>
+                </TouchableOpacity>
             </View>
-        </ScrollView>
+        </View>
     );
 };

@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/navigation/types';
 import { apiClient } from '@/platform/api/client';
 import { useAppSelector } from '@/hooks/useAppStore';
+import { useUser } from '@/ui/context/UserContext';
 
  type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
 
@@ -11,6 +12,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     const { email, password, username } = route.params;
     const theme = useAppSelector((state) => state.ui.theme);
     const isDark = theme === 'dark';
+    const { login } = useUser();
 
     const [otpArray, setOtpArray] = useState(Array(6).fill(''));
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -88,6 +90,22 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
                         rememberMe: true,
                     });
                     if (loginResponse.data?.success || loginResponse.data?.message === 'Login successful!') {
+                        const derivedName = (username || email.split('@')[0])
+                            .replace(/[^a-zA-Z0-9]/g, ' ')
+                            .replace(/\b\w/g, (c) => c.toUpperCase())
+                            .trim();
+                        const userData = loginResponse.data.user || {
+                            name: derivedName,
+                            email,
+                            phone: '',
+                            location: 'India',
+                        };
+
+                        if (!userData.name || String(userData.name).trim() === '') {
+                            userData.name = derivedName;
+                        }
+
+                        await login(userData);
                         loggedIn = true;
                     }
                 } catch {
@@ -96,7 +114,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
             }
 
             if (loggedIn) {
-                navigation.replace('MainTabs');
+                return;
             } else {
                 navigation.replace('Login');
             }

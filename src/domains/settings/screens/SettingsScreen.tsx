@@ -14,7 +14,7 @@ type SettingsNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 export const SettingsScreen: React.FC = () => {
     const navigation = useNavigation<SettingsNavigationProp>();
     const theme = useTheme();
-    const { user, login, logout } = useUser();
+    const { user, logout } = useUser();
 
     const [isVegMode, setIsVegMode] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -63,14 +63,8 @@ export const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
     );
 
-    const mockLogin = () => {
-        login({
-            name: 'John Doe',
-            email: 'john.doe@example.com',
-            phone: '+91 9876543210',
-            location: 'India',
-            photoURL: 'https://ui-avatars.com/api/?name=John+Doe&background=02757A&color=fff'
-        });
+    const goToAuth = async () => {
+        await logout();
     };
 
     return (
@@ -118,7 +112,7 @@ export const SettingsScreen: React.FC = () => {
                         <TouchableOpacity 
                             activeOpacity={0.8}
                             style={{ backgroundColor: '#02757A', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
-                            onPress={mockLogin}
+                            onPress={goToAuth}
                         >
                             <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Login / Sign Up</Text>
                         </TouchableOpacity>

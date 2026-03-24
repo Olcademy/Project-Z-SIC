@@ -34,20 +34,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
                 if (storedUser) {
                     const parsed = JSON.parse(storedUser);
-                    setUser({
-                        ...parsed,
-                        phone: parsed.phone || '',
-                        location: parsed.location || 'India',
-                    });
+                    const isGuest = Boolean(parsed?.isGuest);
+                    if (isGuest) {
+                        // Guest mode should be an explicit choice each session.
+                        await AsyncStorage.removeItem(USER_STORAGE_KEY);
+                        setUser(null);
+                    } else {
+                        setUser({
+                            ...parsed,
+                            phone: parsed.phone || '',
+                            location: parsed.location || 'India',
+                            isGuest: false,
+                        });
+                    }
                 } else {
-                    // Default to guest if no user is stored
-                    setUser({
-                        name: 'Guest User',
-                        email: '',
-                        phone: '',
-                        location: 'India',
-                        isGuest: true,
-                    });
+                    // No session by default; user must login or continue as guest.
+                    setUser(null);
                 }
             } catch (error) {
                 console.error('Failed to load user data:', error);
@@ -91,13 +93,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = useCallback(async () => {
         try {
             await AsyncStorage.removeItem(USER_STORAGE_KEY);
-            setUser({
-                name: 'Guest User',
-                email: '',
-                phone: '',
-                location: 'India',
-                isGuest: true,
-            });
+            setUser(null);
         } catch (error) {
             console.error('Failed to clear user data:', error);
         }
@@ -112,11 +108,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isGuest: true,
         };
         setUser(guestUser);
-        try {
-            await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(guestUser));
-        } catch (error) {
-            console.error('Failed to save guest status:', error);
-        }
     }, []);
 
     return (

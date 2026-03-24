@@ -28,7 +28,6 @@ export type MainTabsParamList = {
 };
 
 export type RootStackParamList = {
-    Splash: undefined;
     AuthLanding: undefined;
     Login: undefined;
     Signup: undefined;

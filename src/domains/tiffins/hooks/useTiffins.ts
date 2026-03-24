@@ -14,6 +14,16 @@ type TiffinApiResponse = {
     data?: Tiffin[];
 };
 
+type TiffinDetailApiResponse = {
+    success?: boolean;
+    data?: TiffinDetail;
+    tiffin?: TiffinDetail;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === 'object' && value !== null;
+};
+
 const normalizeTiffin = (item: Tiffin): Tiffin => {
     const name = item.kitchenName || item.name;
     const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
@@ -113,8 +123,27 @@ export const useTiffinDetail = (id: string) => {
     return useQuery({
         queryKey: ['tiffin', id],
         queryFn: async () => {
-            const response = await apiClient.get<TiffinDetail>(ENDPOINTS.tiffins.detail(id));
-            return normalizeTiffin((response.data as TiffinDetail) ?? (response.data?.data as TiffinDetail));
+            const response = await apiClient.get<TiffinDetail | TiffinDetailApiResponse>(ENDPOINTS.tiffins.detail(id));
+            const raw = response.data as unknown;
+
+            if (typeof raw === 'string') {
+                throw new Error('Unexpected non-JSON response from tiffin detail endpoint.');
+            }
+
+            const payload = isRecord(raw)
+                ? ((raw as TiffinDetailApiResponse).data ?? (raw as TiffinDetailApiResponse).tiffin ?? raw)
+                : raw;
+
+            if (!isRecord(payload)) {
+                throw new Error('Invalid tiffin detail payload.');
+            }
+
+            const normalized = normalizeTiffin(payload as TiffinDetail);
+            if (!normalized._id) {
+                throw new Error('Missing tiffin id in detail payload.');
+            }
+
+            return normalized;
         },
         enabled: !!id,
     });

@@ -91,7 +91,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 }
 
                 await login(userData);
-                navigation.replace('MainTabs');
                 return;
             }
 

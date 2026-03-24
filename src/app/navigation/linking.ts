@@ -8,7 +8,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
     prefixes: [prefix, 'sic://'],
     config: {
         screens: {
-            Splash: 'splash',
             MainTabs: {
                 screens: {
                     RestaurantsStack: {

@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
@@ -11,27 +11,30 @@ import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { useTheme } from '@/ui/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ImageCarousel } from '@/ui/components/ImageCarousel';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventDetail'>;
 
 export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-    const { id } = route.params;
+    const paramItem = route.params.item;
+    const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
+
     const { data: event, isLoading, isError, refetch } = useEventDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
 
-    const normalizedEvent = event as Event | undefined;
+    const normalizedEvent = (event ?? paramItem) as Event | undefined;
 
     const images = useMemo(() => {
         if (!normalizedEvent) return [];
-        return [
-            normalizedEvent.imageUrl,
-            ...(normalizedEvent.images || []),
-        ].filter(Boolean) as string[];
+        const raw = [...(normalizedEvent.images || [])].filter(Boolean) as string[];
+        if (raw.length > 0) {
+            return Array.from(new Set(raw));
+        }
+        const fallback = normalizedEvent.imageUrl || (normalizedEvent as any).image;
+        return fallback ? [String(fallback)] : [];
     }, [normalizedEvent]);
-
-    const heroImageUrl = images[0];
 
     useFocusEffect(
         useCallback(() => {
@@ -74,11 +77,11 @@ export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const dateText = dateObj ? dateObj.toLocaleDateString() : '—';
     const timeText = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
 
-    if (isLoading) {
+    if (isLoading && !paramItem) {
         return <LoadingSkeletonList count={2} />;
     }
 
-    if (isError || !normalizedEvent) {
+    if ((isError && !paramItem) || !normalizedEvent) {
         return <ErrorState message="Failed to load event details." onRetry={refetch} />;
     }
 
@@ -92,11 +95,19 @@ export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
                 {/* Top image section */}
-                <View style={{ height: 200, width: '100%', backgroundColor: colors.surface }}>
-                    {heroImageUrl ? (
-                        <Image source={{ uri: heroImageUrl }} style={{ height: '100%', width: '100%' }} resizeMode="cover" />
+                <View style={{ width: '100%', backgroundColor: colors.surface }}>
+                    {images.length > 0 ? (
+                        <ImageCarousel
+                            images={images}
+                            height={250}
+                            width={Dimensions.get('window').width}
+                            imageStyle={{
+                                borderBottomLeftRadius: 20,
+                                borderBottomRightRadius: 20,
+                            }}
+                        />
                     ) : (
-                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <View style={{ height: 250, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>
                         </View>
                     )}

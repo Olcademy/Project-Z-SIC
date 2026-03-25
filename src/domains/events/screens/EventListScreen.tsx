@@ -177,8 +177,8 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-    const handleEventPress = useCallback((id: string) => {
-        navigation.navigate('EventDetail', { id });
+    const handleEventPress = useCallback((item: Event) => {
+        navigation.navigate('EventDetail', { item });
     }, [navigation]);
 
     const renderItem = useCallback(({ item }: { item: Event }) => (

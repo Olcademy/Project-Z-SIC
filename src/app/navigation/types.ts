@@ -1,18 +1,21 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { Restaurant } from '@/domains/restaurants/types';
+import type { Tiffin } from '@/domains/tiffins/types';
+import type { Event } from '@/domains/events/types';
 
 export type RestaurantsStackParamList = {
     RestaurantList: undefined;
-    RestaurantDetail: { id: string };
+    RestaurantDetail: { item: Restaurant } | { id: string; item?: Restaurant };
 };
 
 export type TiffinStackParamList = {
     TiffinList: undefined;
-    TiffinDetail: { id: string };
+    TiffinDetail: { item: Tiffin } | { id: string; item?: Tiffin };
 };
 
 export type EventsStackParamList = {
     EventList: undefined;
-    EventDetail: { id: string };
+    EventDetail: { item: Event } | { id: string; item?: Event };
 };
 
 export type SettingsStackParamList = {

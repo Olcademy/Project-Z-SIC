@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TiffinStackParamList } from '@/app/navigation/types';
@@ -11,24 +11,30 @@ import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { useTheme } from '@/ui/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ImageCarousel } from '@/ui/components/ImageCarousel';
 
 type Props = NativeStackScreenProps<TiffinStackParamList, 'TiffinDetail'>;
 
 export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-    const { id } = route.params;
+    const paramItem = route.params.item;
+    const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
+
     const { data: tiffin, isLoading, isError, refetch } = useTiffinDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
 
-    const normalizedTiffin = tiffin as TiffinDetail | undefined;
+    const normalizedTiffin = (tiffin ?? paramItem) as TiffinDetail | undefined;
 
     const images = useMemo(() => {
         if (!normalizedTiffin) return [];
-        return [normalizedTiffin.imageUrl, ...(normalizedTiffin.images || [])].filter(Boolean) as string[];
+        const raw = [...(normalizedTiffin.images || [])].filter(Boolean) as string[];
+        if (raw.length > 0) {
+            return Array.from(new Set(raw));
+        }
+        const fallback = normalizedTiffin.imageUrl || (normalizedTiffin as any).image;
+        return fallback ? [String(fallback)] : [];
     }, [normalizedTiffin]);
-
-    const heroImageUrl = images[0];
 
     const plans = useMemo(() => {
         if (!normalizedTiffin) return [];
@@ -89,11 +95,11 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         }, [refetch])
     );
 
-    if (isLoading) {
+    if (isLoading && !paramItem) {
         return <LoadingSkeletonList count={2} />;
     }
 
-    if (isError || !normalizedTiffin) {
+    if ((isError && !paramItem) || !normalizedTiffin) {
         return <ErrorState message="Failed to load tiffin details." onRetry={refetch} />;
     }
 
@@ -103,11 +109,19 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
                 {/* Top image section */}
-                <View style={{ height: 200, width: '100%', backgroundColor: colors.surface }}>
-                    {heroImageUrl ? (
-                        <Image source={{ uri: heroImageUrl }} style={{ height: '100%', width: '100%' }} resizeMode="cover" />
+                <View style={{ width: '100%', backgroundColor: colors.surface }}>
+                    {images.length > 0 ? (
+                        <ImageCarousel
+                            images={images}
+                            height={250}
+                            width={Dimensions.get('window').width}
+                            imageStyle={{
+                                borderBottomLeftRadius: 20,
+                                borderBottomRightRadius: 20,
+                            }}
+                        />
                     ) : (
-                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <View style={{ height: 250, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>
                         </View>
                     )}

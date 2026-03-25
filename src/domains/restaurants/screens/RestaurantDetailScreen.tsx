@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RestaurantsStackParamList } from '@/app/navigation/types';
@@ -11,27 +11,35 @@ import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
 import { useTheme } from '@/ui/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ImageCarousel } from '@/ui/components/ImageCarousel';
 
 type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantDetail'>;
 
 export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-    const { id } = route.params;
+    const paramItem = route.params.item;
+    const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
+
     const { data: restaurant, isLoading, isError, refetch } = useRestaurantDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
-    const normalizedRestaurant = restaurant as RestaurantDetail | undefined;
+    const normalizedRestaurant = (restaurant ?? paramItem) as RestaurantDetail | undefined;
 
     const images = useMemo(() => {
         if (!normalizedRestaurant) return [];
-        return [
-            normalizedRestaurant.imageUrl,
+        const raw = [
             ...(normalizedRestaurant.images || []),
             ...(normalizedRestaurant.image_urls || []),
         ].filter(Boolean) as string[];
-    }, [normalizedRestaurant]);
 
-    const heroImageUrl = images[0];
+        if (raw.length > 0) {
+            const uniq = Array.from(new Set(raw));
+            return uniq;
+        }
+
+        const fallback = normalizedRestaurant.imageUrl || (normalizedRestaurant as any).image;
+        return fallback ? [String(fallback)] : [];
+    }, [normalizedRestaurant]);
 
     useFocusEffect(
         useCallback(() => {
@@ -128,11 +136,11 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
         return (firstSection.items || []).slice(0, 4);
     }, [menuSections]);
 
-    if (isLoading) {
+    if (isLoading && !paramItem) {
         return <LoadingSkeletonList count={2} />;
     }
 
-    if (isError || !normalizedRestaurant) {
+    if ((isError && !paramItem) || !normalizedRestaurant) {
         return <ErrorState message="Failed to load restaurant details." onRetry={refetch} />;
     }
 
@@ -142,11 +150,19 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
                 {/* Top image section */}
-                <View style={{ height: 200, width: '100%', backgroundColor: colors.surface }}>
-                    {heroImageUrl ? (
-                        <Image source={{ uri: heroImageUrl }} style={{ height: '100%', width: '100%' }} resizeMode="cover" />
+                <View style={{ width: '100%', backgroundColor: colors.surface }}>
+                    {images.length > 0 ? (
+                        <ImageCarousel
+                            images={images}
+                            height={250}
+                            width={Dimensions.get('window').width}
+                            imageStyle={{
+                                borderBottomLeftRadius: 20,
+                                borderBottomRightRadius: 20,
+                            }}
+                        />
                     ) : (
-                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                        <View style={{ height: 250, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>
                         </View>
                     )}

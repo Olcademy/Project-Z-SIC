@@ -5,7 +5,7 @@ import { useTheme } from '@/ui/context/ThemeContext';
 
 interface EventCardProps {
     item: Event;
-    onPress: (id: string) => void;
+    onPress: (item: Event) => void;
 }
 
 export const EventCard = memo<EventCardProps>(({ item, onPress }) => {
@@ -48,7 +48,7 @@ export const EventCard = memo<EventCardProps>(({ item, onPress }) => {
                 shadowOffset: { width: 0, height: 4 },
                 elevation: 4,
             }}
-            onPress={() => onPress(item._id || 'unknown')}
+            onPress={() => onPress(item)}
         >
             <View style={{ height: 180, backgroundColor: '#ede9fe' }}>
                 {imageUrl ? (

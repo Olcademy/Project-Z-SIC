@@ -171,8 +171,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-    const handleRestaurantPress = useCallback((id: string) => {
-        navigation.navigate('RestaurantDetail', { id });
+    const handleRestaurantPress = useCallback((item: Restaurant) => {
+        navigation.navigate('RestaurantDetail', { item });
     }, [navigation]);
 
     const renderItem = useCallback(({ item }: { item: Restaurant }) => (

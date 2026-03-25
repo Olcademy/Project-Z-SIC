@@ -90,7 +90,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                     userData.name = derivedName;
                 }
 
-                await login(userData);
+                await login(userData, { rememberMe });
                 return;
             }
 

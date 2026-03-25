@@ -34,6 +34,7 @@ export const RootNavigator = () => {
     return (
         <Stack.Navigator
             key={user ? 'app' : 'auth'}
+            initialRouteName={user ? 'MainTabs' : 'Login'}
             screenOptions={{ headerShown: false }}
         >
             {user ? (

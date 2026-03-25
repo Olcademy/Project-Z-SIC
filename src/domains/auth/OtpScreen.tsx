@@ -105,7 +105,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
                             userData.name = derivedName;
                         }
 
-                        await login(userData);
+                        await login(userData, { rememberMe: true });
                         loggedIn = true;
                     }
                 } catch {

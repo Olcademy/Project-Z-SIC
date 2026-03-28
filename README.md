@@ -1,3 +1,4 @@
+
 # Strategic Information Center (SIC)
 
 **Strategic Information Center (SIC)** is a mobile discovery platform built with React Native and a scalable backend. It aggregates structured information about restaurants, tiffin services, and events, presented in a familiar, user-friendly UI.

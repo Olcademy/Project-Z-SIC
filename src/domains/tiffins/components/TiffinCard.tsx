@@ -44,7 +44,6 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
             <View style={{ height: 180, backgroundColor: '#fef3e2' }}>
                 {imageUrl ? (
                     <ImageBackground source={{ uri: imageUrl }} style={{ flex: 1 }} resizeMode="cover">
-                        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: 'rgba(0,0,0,0.38)' }} />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 12 }}>
                             {item.vegOnly && (
                                 <View style={{ backgroundColor: '#16a34a', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>

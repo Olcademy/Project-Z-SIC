@@ -26,6 +26,7 @@ export interface Restaurant {
     serviceTypes?: string[];
     vegOnly?: boolean;
     isVeg?: boolean;
+    rating?: number | string;
     images?: string[];
     imageUrl?: string;
     location?: RestaurantLocation;

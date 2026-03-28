@@ -156,8 +156,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-    const handleTiffinPress = useCallback((id: string) => {
-        navigation.navigate('TiffinDetail', { id });
+    const handleTiffinPress = useCallback((item: Tiffin) => {
+        navigation.navigate('TiffinDetail', { item });
     }, [navigation]);
 
     const renderItem = useCallback(({ item }: { item: Tiffin }) => (

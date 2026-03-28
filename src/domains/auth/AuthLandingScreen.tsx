@@ -4,12 +4,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/navigation/types';
 import { loginAsGuest } from '@/platform/auth/guest';
 import { useAppSelector } from '@/hooks/useAppStore';
+import { useUser } from '@/ui/context/UserContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AuthLanding'>;
 
 export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
     const theme = useAppSelector((state) => state.ui.theme);
     const isDark = theme === 'dark';
+    const { setAsGuest } = useUser();
 
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
         setErrorMessage(null);
         try {
             await loginAsGuest();
-            navigation.replace('MainTabs');
+            await setAsGuest();
         } catch (error: any) {
             setErrorMessage(error?.response?.data?.message || 'Unable to login as guest.');
         } finally {
@@ -54,7 +56,7 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
                     onPress={() => navigation.navigate('Signup')}
                     disabled={isLoading}
                 >
-                    <Text className="text-gray-900 dark:text-slate-100 text-base font-semibold text-center">Create an account</Text>
+                    <Text className="text-gray-900 dark:text-slate-100 text-base font-semibold text-center">Sign Up</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -65,7 +67,7 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
                     {isLoading ? (
                         <ActivityIndicator color="#02757A" />
                     ) : (
-                        <Text className="text-gray-900 dark:text-slate-100 text-base font-semibold text-center">Login as Guest</Text>
+                        <Text className="text-gray-900 dark:text-slate-100 text-base font-semibold text-center">Continue as Guest</Text>
                     )}
                 </TouchableOpacity>
 

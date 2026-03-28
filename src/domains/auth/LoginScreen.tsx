@@ -90,8 +90,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                     userData.name = derivedName;
                 }
 
-                await login(userData);
-                navigation.replace('MainTabs');
+                await login(userData, { rememberMe });
                 return;
             }
 

@@ -14,6 +14,12 @@ const normalizeEvent = (item: Event): Event => {
     const date = item.startAt || item.date;
     const venue = item.venue;
 
+    const images = Array.isArray(item.images)
+        ? item.images
+        : item.imageUrl
+        ? [item.imageUrl]
+        : [];
+
     const lat = typeof venue === 'object' ? venue?.lat : undefined;
     const lng = typeof venue === 'object' ? venue?.lng : undefined;
 
@@ -22,6 +28,8 @@ const normalizeEvent = (item: Event): Event => {
         _id: id,
         name,
         date,
+        images,
+        imageUrl: item.imageUrl || images[0],
         location: {
             lat,
             lng,

@@ -5,7 +5,7 @@ import { useTheme } from '@/ui/context/ThemeContext';
 
 interface TiffinCardProps {
     item: Tiffin;
-    onPress: (id: string) => void;
+    onPress: (item: Tiffin) => void;
 }
 
 export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
@@ -39,7 +39,7 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
                 shadowOffset: { width: 0, height: 4 },
                 elevation: 4,
             }}
-            onPress={() => onPress(item._id || 'unknown')}
+            onPress={() => onPress(item)}
         >
             <View style={{ height: 180, backgroundColor: '#fef3e2' }}>
                 {imageUrl ? (

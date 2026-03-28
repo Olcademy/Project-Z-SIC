@@ -1,36 +1,46 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Switch, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import appConfig from '../../../../app.json';
-import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import { ScreenHeader } from '@/ui/components/ScreenHeader';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { useUser } from '@/ui/context/UserContext';
 import { SettingsStackParamList } from '@/app/navigation/types';
+import { ScreenHeader } from '@/ui/components/ScreenHeader';
 
 type SettingsNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
 export const SettingsScreen: React.FC = () => {
     const navigation = useNavigation<SettingsNavigationProp>();
     const theme = useTheme();
-    const { user, login, logout } = useUser();
-    const { data: featureFlags } = useFeatureFlags();
+    const { user, logout } = useUser();
 
     const [isVegMode, setIsVegMode] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const appVersion = appConfig?.expo?.version || '1.0.0';
-    const flagEntries = useMemo(() => Object.entries(featureFlags || {}), [featureFlags]);
 
-    const SectionHeader = ({ title }: { title: string }) => (
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext, textTransform: 'uppercase', marginBottom: 12, marginLeft: 4, letterSpacing: 1 }}>
+    const cardStyle = {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: theme.border
+    };
+
+    const CardTitle = ({ title }: { title: string }) => (
+        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 16 }}>
             {title}
         </Text>
     );
 
-    const SettingItem = ({ icon, label, value, onPress, showArrow = true, color = theme.text, iconBg = theme.bg }: any) => (
+    const SettingItem = ({ icon, label, value, onPress, showArrow = true, color = theme.text, iconBg = theme.bg, hasBorder = true }: any) => (
         <TouchableOpacity 
             onPress={onPress}
             activeOpacity={0.7}
@@ -38,7 +48,7 @@ export const SettingsScreen: React.FC = () => {
                 flexDirection: 'row', 
                 alignItems: 'center', 
                 paddingVertical: 14, 
-                borderBottomWidth: 1, 
+                borderBottomWidth: hasBorder ? 1 : 0, 
                 borderBottomColor: theme.border,
             }}
         >
@@ -53,45 +63,33 @@ export const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
     );
 
-    const mockLogin = () => {
-        login({
-            name: 'John Doe',
-            email: 'john.doe@example.com',
-            phone: '+91 9876543210',
-            location: 'India',
-            photoURL: 'https://ui-avatars.com/api/?name=John+Doe&background=02757A&color=fff'
-        });
+    const goToAuth = async () => {
+        await logout();
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            {/* Minimal Header */}
-            <View style={{ paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 }}>
-                <Text style={{ fontSize: 26, fontWeight: '800', color: theme.text }}>Settings</Text>
+        <View style={{ flex: 1, backgroundColor: theme.bg }}>
+            {/* Header with decorative circles */}
+            <View style={{ paddingTop: 48, paddingBottom: 16, paddingHorizontal: 16, overflow: 'hidden' }}>
+                <View style={{ position: 'absolute', right: -20, top: -20, width: 150, height: 150, borderRadius: 75, backgroundColor: theme.headerCircleSettings || '#e0e7ff', opacity: 0.5 }} />
+                <View style={{ position: 'absolute', left: -40, top: 40, width: 120, height: 120, borderRadius: 60, backgroundColor: theme.headerCircleSettings || '#e0e7ff', opacity: 0.4 }} />
+                <ScreenHeader 
+                    title="Settings" 
+                    subtitle="Manage your preferences" 
+                    showSearch={false}
+                />
             </View>
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}>
                 {/* Profile Section */}
-                <SectionHeader title="Profile" />
-                <View style={{ marginBottom: 30 }}>
-                    {user && !user.isGuest ? (
-                        <TouchableOpacity 
-                            onPress={() => navigation.navigate('EditProfile')}
-                            activeOpacity={0.8}
-                            style={{ 
-                                flexDirection: 'row', 
-                                alignItems: 'center', 
-                                backgroundColor: '#fff', 
-                                padding: 16, 
-                                borderRadius: 16,
-                                shadowColor: '#000',
-                                shadowOpacity: 0.05,
-                                shadowRadius: 10,
-                                elevation: 2,
-                                borderWidth: 1,
-                                borderColor: theme.border
-                            }}
-                        >
+                {user && !user.isGuest ? (
+                    <TouchableOpacity 
+                        onPress={() => navigation.navigate('EditProfile')}
+                        activeOpacity={0.8}
+                        style={cardStyle}
+                    >
+                        <CardTitle title="Profile" />
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                                 {user.photoURL ? (
                                     <Image source={{ uri: user.photoURL }} style={{ width: 40, height: 40, borderRadius: 20 }} />
@@ -104,33 +102,44 @@ export const SettingsScreen: React.FC = () => {
                                 <Text style={{ fontSize: 13, color: theme.subtext, marginTop: 2 }}>{user.email}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={18} color={theme.subtext} />
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={{ 
-                            backgroundColor: '#fff', 
-                            padding: 20, 
-                            borderRadius: 16,
-                            borderWidth: 1,
-                            borderColor: theme.border,
-                            alignItems: 'flex-start'
-                        }}>
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 4 }}>Login to access your profile</Text>
-                            <Text style={{ fontSize: 13, color: theme.subtext, marginBottom: 16 }}>Manage your preferences and sync data</Text>
-                            <TouchableOpacity 
-                                activeOpacity={0.8}
-                                style={{ backgroundColor: '#02757A', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
-                                onPress={mockLogin}
-                            >
-                                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Login / Sign Up</Text>
-                            </TouchableOpacity>
                         </View>
-                    )}
+                    </TouchableOpacity>
+                ) : (
+                    <View style={[cardStyle, { alignItems: 'flex-start' }]}>
+                        <CardTitle title="Profile" />
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 4 }}>Login to access your profile</Text>
+                        <Text style={{ fontSize: 13, color: theme.subtext, marginBottom: 16 }}>Manage your preferences and sync data</Text>
+                        <TouchableOpacity 
+                            activeOpacity={0.8}
+                            style={{ backgroundColor: '#02757A', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+                            onPress={goToAuth}
+                        >
+                            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Login / Sign Up</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Appearance Section */}
+                <View style={cardStyle}>
+                    <CardTitle title="Appearance" />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 15, color: theme.text }}>Theme</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 13, color: '#9ca3af', marginRight: 8 }}>Light</Text>
+                            <Switch 
+                                value={false} 
+                                onValueChange={() => {}} 
+                                trackColor={{ false: '#e5e7eb', true: '#d1d5db' }}
+                                thumbColor="#f9fafb"
+                            />
+                        </View>
+                    </View>
                 </View>
 
                 {/* Preferences Section */}
-                <SectionHeader title="Preferences" />
-                <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.border }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 }}>
+                <View style={cardStyle}>
+                    <CardTitle title="Preferences" />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: '#f0fdf4', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
                                 <Ionicons name="leaf-outline" size={18} color="#16a34a" />
@@ -147,9 +156,9 @@ export const SettingsScreen: React.FC = () => {
                 </View>
 
                 {/* Notifications Section */}
-                <SectionHeader title="Notifications" />
-                <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.border }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 }}>
+                <View style={cardStyle}>
+                    <CardTitle title="Notifications" />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: '#f0f4ff', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
                                 <Ionicons name="notifications-outline" size={18} color="#02757A" />
@@ -166,47 +175,44 @@ export const SettingsScreen: React.FC = () => {
                 </View>
 
                 {/* Location Section */}
-                <SectionHeader title="Location" />
-                <View style={{ backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.border }}>
-                    <SettingItem icon="location-outline" label="Current Country" value={user?.location || 'India'} iconBg="#fff7ed" showArrow={true} />
+                <View style={[cardStyle, { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 2 }]}>
+                    <CardTitle title="Location" />
+                    <SettingItem icon="location-outline" label="Current Country" value={user?.location || 'India'} iconBg="#fff7ed" showArrow={true} hasBorder={false} />
                 </View>
 
                 {/* Support Section */}
-                <SectionHeader title="Help & Support" />
-                <View style={{ backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.border }}>
+                <View style={[cardStyle, { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 2 }]}>
+                    <CardTitle title="Help & Support" />
                     <SettingItem icon="help-circle-outline" label="Frequently Asked Questions" iconBg="#f5f3ff" />
                     <SettingItem icon="mail-outline" label="Contact Support" showArrow={false} iconBg="#ecfeff" />
-                    <SettingItem icon="document-text-outline" label="Privacy Policy" iconBg="#fef2f2" />
+                    <SettingItem icon="document-text-outline" label="Privacy Policy" iconBg="#fef2f2" hasBorder={false} />
+                </View>
+
+                {/* App Section */}
+                <View style={cardStyle}>
+                    <CardTitle title="App" />
+                    <Text style={{ fontSize: 15, color: theme.text, marginBottom: 8, fontWeight: '500' }}>Version: {appVersion}</Text>
+                    <Text style={{ fontSize: 14, color: theme.subtext }}>Strategic Information Center</Text>
                 </View>
 
                 {/* About Section */}
-                <SectionHeader title="About" />
-                <View style={{ backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.border }}>
-                    <SettingItem icon="information-circle-outline" label="App Version" value={appVersion} showArrow={false} iconBg="#eff6ff" />
+                <View style={[cardStyle, { marginBottom: 30 }]}>
+                    <CardTitle title="About" />
+                    <Text style={{ fontSize: 14, color: theme.subtext, lineHeight: 22 }}>
+                        SIC helps you discover trusted restaurants, tiffin services, and local events.
+                    </Text>
                 </View>
 
+                {/* Logout Button (Bottom Only) */}
                 {user && !user.isGuest && (
                     <TouchableOpacity 
                         onPress={logout}
                         activeOpacity={0.7}
-                        style={{ flexDirection: 'row', alignItems: 'center', padding: 16, marginTop: 10 }}
+                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', borderRadius: 16, paddingVertical: 16, marginTop: 8, marginBottom: 20, borderWidth: 1, borderColor: '#fee2e2' }}
                     >
                         <Ionicons name="log-out-outline" size={22} color="#ef4444" />
-                        <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: '700', marginLeft: 12 }}>Logout Account</Text>
+                        <Text style={{ color: '#ef4444', fontSize: 16, fontWeight: '700', marginLeft: 10 }}>Logout Account</Text>
                     </TouchableOpacity>
-                )}
-
-                {/* Feature Flags (Debug) */}
-                {flagEntries.length > 0 && (
-                    <View style={{ marginTop: 24, opacity: 0.5 }}>
-                        <SectionHeader title="Developer Options" />
-                        {flagEntries.map(([key, value]) => (
-                            <View key={key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
-                                <Text style={{ fontSize: 12, color: theme.subtext }}>{key}</Text>
-                                <Text style={{ fontSize: 11, fontWeight: '700', color: value ? '#16a34a' : theme.subtext }}>{value ? 'ON' : 'OFF'}</Text>
-                            </View>
-                        ))}
-                    </View>
                 )}
             </ScrollView>
         </View>

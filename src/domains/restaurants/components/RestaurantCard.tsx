@@ -55,12 +55,7 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                 backgroundColor: theme.card,
                 borderRadius: 16,
                 overflow: 'hidden',
-                marginBottom: 16,
-                shadowColor: '#000',
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
+                marginBottom: 18,
             }}
             onPress={() => onPress(item)}
         >

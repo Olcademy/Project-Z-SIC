@@ -33,11 +33,6 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
                 borderRadius: 24,
                 overflow: 'hidden',
                 marginBottom: 18,
-                shadowColor: '#b45309',
-                shadowOpacity: 0.10,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
             }}
             onPress={() => onPress(item)}
         >

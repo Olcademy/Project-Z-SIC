@@ -42,11 +42,6 @@ export const EventCard = memo<EventCardProps>(({ item, onPress }) => {
                 borderRadius: 24,
                 overflow: 'hidden',
                 marginBottom: 18,
-                shadowColor: '#6d28d9',
-                shadowOpacity: 0.10,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 4,
             }}
             onPress={() => onPress(item)}
         >

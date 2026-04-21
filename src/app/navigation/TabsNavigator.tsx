@@ -61,15 +61,16 @@ export const TabsNavigator = () => {
                     backgroundColor: '#ffffff',
                     borderTopColor: '#f3f4f6',
                     borderTopWidth: 1,
-                    height: 90,
-                    paddingBottom: 30,
-                    paddingTop: 8,
+                    height: 100,
+                    paddingBottom: 40,
+                    paddingTop: 12,
                 },
-                tabBarActiveTintColor: '#02757A',
+                tabBarActiveTintColor: '#FF7F50',
                 tabBarInactiveTintColor: '#6b7280',
                 tabBarLabelStyle: {
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: '600',
+                    marginTop: 4,
                 },
                 tabBarIcon: ({ focused, color, size }) => {
                     const icons: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
@@ -79,11 +80,11 @@ export const TabsNavigator = () => {
                         SettingsStack: { active: 'settings', inactive: 'settings-outline' },
                     };
                     const icon = icons[route.name];
-                    return <Ionicons name={focused ? icon.active : icon.inactive} size={22} color={color} />;
+                    return <Ionicons name={focused ? icon.active : icon.inactive} size={24} color={color} />;
                 },
             })}
         >
-            <Tab.Screen name="RestaurantsStack" component={RestaurantsStackNavigator} options={{ title: 'Restaurants' }} />
+            <Tab.Screen name="RestaurantsStack" component={RestaurantsStackNavigator} options={{ title: 'Restaurant' }} />
             <Tab.Screen name="TiffinStack" component={TiffinStackNavigator} options={{ title: 'Tiffin' }} />
             <Tab.Screen name="EventsStack" component={EventsStackNavigator} options={{ title: 'Events' }} />
             <Tab.Screen name="SettingsStack" component={SettingsStackNavigator} options={{ title: 'Settings' }} />

@@ -1,93 +1,80 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, useWindowDimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Event } from '@/domains/events/types';
 import { useTheme } from '@/ui/context/ThemeContext';
 
 interface EventCardProps {
     item: Event;
     onPress: (item: Event) => void;
+    isGrid?: boolean;
 }
 
-export const EventCard = memo<EventCardProps>(({ item, onPress }) => {
+export const EventCard = memo<EventCardProps>(({ item, onPress, isGrid }) => {
     const theme = useTheme();
+    const { width: screenWidth } = useWindowDimensions();
+    const gridItemWidth = (screenWidth - 56) / 2; // (Screen - horizontal padding - gap) / 2
 
     const formatVenue = (venue?: Event['venue']) => {
         if (!venue) return '';
         if (typeof venue === 'string') return venue;
         if (typeof venue === 'object') {
-            const value = venue as { name?: string; address?: string; city?: string; state?: string; country?: string };
-            return [value.name, value.address, value.city, value.state, value.country]
-                .filter(Boolean)
-                .join(', ');
+            const value = venue as { name?: string; city?: string };
+            return [value.name, value.city].filter(Boolean).join(', ');
         }
         return String(venue);
     };
 
-    const isPastEvent = (dateString?: string) => {
-        if (!dateString) return false;
-        const date = new Date(dateString);
-        if (Number.isNaN(date.getTime())) return false;
-        return date.getTime() < Date.now();
-    };
-
-    const imageUrl = item.imageUrl || item.images?.[0];
-    const ended = isPastEvent(item.date);
+    const imageUrl = item.imageUrl || item.images?.[0] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800';
 
     return (
         <TouchableOpacity
             data-testid={`event-card-${item._id}`}
             activeOpacity={0.92}
             style={{
-                backgroundColor: theme.card,
-                borderRadius: 24,
-                overflow: 'hidden',
-                marginBottom: 18,
-                shadowColor: '#6d28d9',
-                shadowOpacity: 0.10,
-                shadowRadius: 16,
+                width: isGrid ? gridItemWidth : '100%',
+                backgroundColor: '#FFFFFF',
+                borderRadius: 0,
+                marginBottom: 24,
+                shadowColor: '#000',
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
                 shadowOffset: { width: 0, height: 4 },
                 elevation: 4,
+                borderWidth: 1,
+                borderColor: '#F0F0F0',
             }}
             onPress={() => onPress(item)}
         >
-            <View style={{ height: 180, backgroundColor: '#ede9fe' }}>
-                {imageUrl ? (
-                    <ImageBackground source={{ uri: imageUrl }} style={{ flex: 1 }} resizeMode="cover">
-                        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: 'rgba(0,0,0,0.38)' }} />
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 12 }}>
-                            {item.category && (
-                                <View style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-                                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{item.category}</Text>
-                                </View>
-                            )}
-                            {ended && (
-                                <View style={{ marginLeft: 'auto', backgroundColor: '#dc2626', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-                                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>ENDED</Text>
-                                </View>
-                            )}
-                        </View>
-                    </ImageBackground>
-                ) : (
-                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontSize: 40 }}>🎪</Text>
-                        <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 6 }}>No image available</Text>
-                    </View>
-                )}
+            <View style={{ height: isGrid ? 200 : 220, backgroundColor: '#F3F4F6', borderRadius: 0, overflow: 'hidden' }}>
+                <ImageBackground 
+                    source={{ uri: imageUrl }} 
+                    style={{ flex: 1 }} 
+                    imageStyle={{ borderRadius: 0 }}
+                    resizeMode="cover"
+                >
+                    <TouchableOpacity 
+                        style={{ 
+                            position: 'absolute', top: 10, right: 10, 
+                            backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20, 
+                            width: 28, height: 28, alignItems: 'center', justifyContent: 'center' 
+                        }}
+                    >
+                        <Ionicons name="bookmark-outline" size={16} color="#FFF" />
+                    </TouchableOpacity>
+                </ImageBackground>
             </View>
 
-            <View style={{ padding: 16, backgroundColor: theme.card }}>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: theme.text }} numberOfLines={1}>
+            <View style={{ padding: 10 }}>
+                <Text style={{ fontSize: isGrid ? 14 : 16, fontWeight: '700', color: '#1A1A1A' }} numberOfLines={2}>
                     {item.name || item.title || 'Unnamed Event'}
                 </Text>
-                {item.date && (
-                    <Text style={{ fontSize: 13, color: theme.subtext, marginTop: 6 }}>{new Date(item.date).toLocaleDateString()}</Text>
-                )}
-                {item.venue && (
-                    <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 4 }} numberOfLines={1}>Venue: {formatVenue(item.venue)}</Text>
-                )}
-                {item.category && (
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#02757A', marginTop: 6 }}>{item.category}</Text>
-                )}
+                <Text style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+                    Sat, 25 Apr, 10:00 PM
+                </Text>
+                <Text style={{ fontSize: 11, color: '#999', marginTop: 2 }} numberOfLines={1}>
+                    {formatVenue(item.venue) || 'The Penthouse, Palm jumeira'}
+                </Text>
             </View>
         </TouchableOpacity>
     );

@@ -44,6 +44,8 @@ export interface Restaurant {
     latitude?: string | number;
     longitude?: string | number;
     features?: string[];
+    hasOffer?: boolean;
+    offer?: string | any;
 }
 
 export interface RestaurantDetail extends Restaurant {

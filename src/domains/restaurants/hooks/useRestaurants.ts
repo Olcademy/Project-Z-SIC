@@ -160,14 +160,14 @@ export const useTakeawayFavorites = () => {
     });
 };
 
-export const useTakeawayFavoriteStatus = (id: string) => {
+export const useTakeawayFavoriteStatus = (id: string, options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: ['takeaway-favorite-status', id],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.favorites.check(id));
             return data?.data ?? data;
         },
-        enabled: !!id,
+        enabled: (options?.enabled !== false) && !!id,
     });
 };
 

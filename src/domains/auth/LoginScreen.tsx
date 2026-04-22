@@ -7,6 +7,7 @@ import { apiClient } from '@/platform/api/client';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { useAppSelector } from '@/hooks/useAppStore';
 import { useUser } from '@/ui/context/UserContext';
+import { setUserAuthToken } from '@/platform/auth/token';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -77,6 +78,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             });
 
             if (response.data?.success || response.data?.message === 'Login successful!') {
+                const token = response.data?.token || response.data?.data?.token;
+                await setUserAuthToken(token, { persist: rememberMe });
+
                 const derivedName = form.email
                     .split('@')[0]
                     .replace(/[^a-zA-Z0-9]/g, ' ')

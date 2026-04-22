@@ -5,6 +5,7 @@ import { RootStackParamList } from '@/app/navigation/types';
 import { apiClient } from '@/platform/api/client';
 import { useAppSelector } from '@/hooks/useAppStore';
 import { useUser } from '@/ui/context/UserContext';
+import { setUserAuthToken } from '@/platform/auth/token';
 
  type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
 
@@ -90,6 +91,9 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
                         rememberMe: true,
                     });
                     if (loginResponse.data?.success || loginResponse.data?.message === 'Login successful!') {
+                        const token = loginResponse.data?.token || loginResponse.data?.data?.token;
+                        await setUserAuthToken(token, { persist: true });
+
                         const derivedName = (username || email.split('@')[0])
                             .replace(/[^a-zA-Z0-9]/g, ' ')
                             .replace(/\b\w/g, (c) => c.toUpperCase())

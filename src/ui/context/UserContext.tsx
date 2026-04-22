@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearUserAuthToken, hydrateUserAuthToken } from '@/platform/auth/token';
 
 export interface User {
     name: string;
@@ -39,6 +40,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 // If the user didn't opt into persistence, always start logged out.
                 if (!rememberMe) {
+                    await clearUserAuthToken();
                     await AsyncStorage.removeItem(USER_STORAGE_KEY);
                     setUser(null);
                     return;
@@ -61,9 +63,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             location: parsed.location || 'India',
                             isGuest: false,
                         });
+
+                        // Ensure authenticated requests include the token after cold start.
+                        await hydrateUserAuthToken();
                     }
                 } else {
                     // No session by default; user must login or continue as guest.
+                    await clearUserAuthToken();
                     setUser(null);
                 }
             } catch (error) {
@@ -118,6 +124,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = useCallback(async () => {
         try {
+            await clearUserAuthToken();
             await AsyncStorage.removeItem(USER_STORAGE_KEY);
             await AsyncStorage.setItem(REMEMBER_ME_KEY, JSON.stringify(false));
             setShouldPersistUser(false);

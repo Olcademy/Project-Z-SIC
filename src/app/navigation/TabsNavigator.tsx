@@ -24,6 +24,9 @@ const TiffinStack = createNativeStackNavigator<TiffinStackParamList>();
 const EventsStack = createNativeStackNavigator<EventsStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
+const RESTAURANTS_ACTIVE_ICON = '#FF7A00';
+const TIFFIN_ACTIVE_ICON = '#FF7A00';
+
 const RestaurantsStackNavigator = () => (
     <RestaurantsStack.Navigator screenOptions={{ headerShown: false }}>
         <RestaurantsStack.Screen name="RestaurantList" component={RestaurantListScreen} />
@@ -79,12 +82,23 @@ export const TabsNavigator = () => {
                         SettingsStack: { active: 'settings', inactive: 'settings-outline' },
                     };
                     const icon = icons[route.name];
-                    return <Ionicons name={focused ? icon.active : icon.inactive} size={22} color={color} />;
+                    const iconColor =
+                        (route.name === 'RestaurantsStack' && focused ? RESTAURANTS_ACTIVE_ICON : null) ??
+                        (route.name === 'TiffinStack' && focused ? TIFFIN_ACTIVE_ICON : null) ??
+                        color;
+                    return <Ionicons name={focused ? icon.active : icon.inactive} size={22} color={iconColor} />;
                 },
             })}
         >
-            <Tab.Screen name="RestaurantsStack" component={RestaurantsStackNavigator} options={{ title: 'Restaurants' }} />
-            <Tab.Screen name="TiffinStack" component={TiffinStackNavigator} options={{ title: 'Tiffin' }} />
+            <Tab.Screen
+                name="RestaurantsStack"
+                component={RestaurantsStackNavigator}
+                options={{
+                    title: 'Restaurants',
+                    tabBarActiveTintColor: RESTAURANTS_ACTIVE_ICON,
+                }}
+            />
+            <Tab.Screen name="TiffinStack" component={TiffinStackNavigator} options={{ title: 'Tiffin', tabBarActiveTintColor: TIFFIN_ACTIVE_ICON }} />
             <Tab.Screen name="EventsStack" component={EventsStackNavigator} options={{ title: 'Events' }} />
             <Tab.Screen name="SettingsStack" component={SettingsStackNavigator} options={{ title: 'Settings' }} />
         </Tab.Navigator>

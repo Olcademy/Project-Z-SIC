@@ -10,7 +10,10 @@ export const AppConfig = {
      * Backend API Base URL
      * Configured via EXPO_PUBLIC_BACKEND_URL environment variable
      */
-    API_BASE_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'https://project-z-backend-apis.onrender.com',
+    API_BASE_URL:
+        process.env.EXPO_PUBLIC_API_BASE_URL ||
+        process.env.EXPO_PUBLIC_BACKEND_URL ||
+        'https://project-z-backend-apis.onrender.com',
     
     /**
      * Feature Flags (Static for Phase 1)

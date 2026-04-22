@@ -120,6 +120,26 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         return null;
     };
 
+    const getRatingValue = (item: Restaurant) => {
+        const raw = item.rating ?? item.restaurantInfo?.ratings?.overall;
+        if (typeof raw === 'number') return raw;
+        if (typeof raw === 'string') {
+            const parsed = Number(raw);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    };
+
+    const hasAnyOffer = (item: Restaurant) => {
+        if (item.hasOffer) return true;
+        if (item.offer) return true;
+        const anyItem = item as unknown as { badges?: unknown };
+        if (Array.isArray(anyItem.badges)) {
+            return anyItem.badges.some((b) => String(b).toLowerCase().includes('offer'));
+        }
+        return false;
+    };
+
     const isVegRestaurant = (item: Restaurant) => {
         if (item.vegOnly || item.isVeg) return true;
         const tags = getCuisineTags(item).map((tag) => tag.toLowerCase());
@@ -142,8 +162,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (selectedCuisine && !cuisines.includes(selectedCuisine)) return false;
             if (vegOnly && !isVegRestaurant(item)) return false;
-            if (topRated && (item.rating ?? 0) < 4.0) return false;
-            if (hasOffers && !item.hasOffer && !item.offer) return false;
+            if (topRated && getRatingValue(item) < 4.0) return false;
+            if (hasOffers && !hasAnyOffer(item)) return false;
             return true;
         });
 

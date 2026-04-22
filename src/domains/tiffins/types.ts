@@ -1,5 +1,22 @@
+export type TiffinMenu = {
+    plans?: Array<{ label?: string; _id?: string }>;
+    mealTypes?: Array<{
+        mealTypeId?: string;
+        label?: string;
+        description?: string;
+        prices?: Record<string, number>;
+        specificPlans?: string[];
+        _id?: string;
+    }>;
+    instructions?: Array<{ title?: string; details?: string; _id?: string }>;
+    serviceDays?: string[];
+    isFlexibleDates?: boolean;
+    _id?: string;
+};
+
 export interface Tiffin {
     _id: string;
+    id?: string;
     name: string;
     shortDescription?: string;
     pricePerMeal?: number;
@@ -17,27 +34,15 @@ export interface Tiffin {
     deliveryCity?: string[];
     deliveryTimeSlots?: string[];
     freeDelivery?: string | boolean;
-    menu?: {
-        plans?: Array<{ label?: string; _id?: string }>;
-        mealTypes?: Array<{
-            mealTypeId?: string;
-            label?: string;
-            description?: string;
-            prices?: Record<string, number>;
-            specificPlans?: string[];
-            _id?: string;
-        }>;
-        instructions?: Array<{ title?: string; details?: string; _id?: string }>;
-        serviceDays?: string[];
-        isFlexibleDates?: boolean;
-        _id?: string;
-    };
+    menu?: TiffinMenu | string[];
     operatingTimes?: Record<string, { open?: string; close?: string }>;
+
+    hasOffer?: boolean;
+    offer?: unknown;
 }
 
 export interface TiffinDetail extends Tiffin {
     description?: string;
-    menu?: string[];
     contact?: string;
     contactPhone?: string;
     contactEmail?: string;

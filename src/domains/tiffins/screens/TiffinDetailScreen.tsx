@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo, useCallback, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TiffinStackParamList } from '@/app/navigation/types';
@@ -13,6 +13,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ImageCarousel } from '@/ui/components/ImageCarousel';
 
+import rotiImg from '../../../../assets/roti.png';
+import naanImg from '../../../../assets/naan.png';
+
+const PRIMARY = '#FF7A00';
+
+type FilterKey = 'budget' | 'rating4' | 'pureVeg';
+
 type Props = NativeStackScreenProps<TiffinStackParamList, 'TiffinDetail'>;
 
 export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
@@ -25,6 +32,94 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
 
     const normalizedTiffin = (tiffin ?? paramItem) as TiffinDetail | undefined;
+
+    const [filters, setFilters] = useState<Record<FilterKey, boolean>>({
+        budget: false,
+        rating4: false,
+        pureVeg: false,
+    });
+
+    const [recommendedOpen, setRecommendedOpen] = useState(true);
+    const [recommendedExpanded, setRecommendedExpanded] = useState<Record<string, boolean>>({});
+
+    const toggleFilter = useCallback((key: FilterKey) => {
+        setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+    }, []);
+
+    const clearFilters = useCallback(() => {
+        setFilters({ budget: false, rating4: false, pureVeg: false });
+    }, []);
+
+    const anyFilterActive = filters.budget || filters.rating4 || filters.pureVeg;
+
+    const mostOrderedTogether = useMemo(() => {
+        return [
+            {
+                key: 'roti',
+                title: 'OG Roti',
+                subtitle: 'Whole wheat · fresh & soft',
+                description: 'Classic whole-wheat roti made fresh. Best with dal, sabzi, and gravies.',
+                price: 12,
+                rating: 4.6,
+                veg: true,
+                image: rotiImg,
+            },
+            {
+                key: 'nonVegNaan',
+                title: 'Non-veg naan',
+                subtitle: 'Tandoori naan · buttery finish',
+                description: 'Soft tandoori naan brushed with butter. A great pairing with rich non-veg curries.',
+                price: 28,
+                rating: 4.3,
+                veg: false,
+                image: naanImg,
+            },
+        ] as const;
+    }, []);
+
+    const recommendedForYou = useMemo(() => {
+        const items = [
+            {
+                key: 'dalTadka',
+                title: 'Dal Tadka',
+                description: 'Comforting yellow dal tempered with garlic and spices.',
+                price: 89,
+                rating: 4.5,
+                veg: true,
+            },
+            {
+                key: 'paneerButterMasala',
+                title: 'Paneer Butter Masala',
+                description: 'Creamy tomato gravy with soft paneer cubes.',
+                price: 129,
+                rating: 4.4,
+                veg: true,
+            },
+            {
+                key: 'chickenCurry',
+                title: 'Chicken Curry',
+                description: 'Slow-cooked chicken curry with rich, spiced gravy.',
+                price: 159,
+                rating: 4.2,
+                veg: false,
+            },
+            {
+                key: 'jeeraRice',
+                title: 'Jeera Rice',
+                description: 'Fluffy basmati rice tempered with cumin.',
+                price: 79,
+                rating: 4.1,
+                veg: true,
+            },
+        ] as const;
+
+        return items.filter((it) => {
+            if (filters.pureVeg && !it.veg) return false;
+            if (filters.rating4 && it.rating < 4.0) return false;
+            if (filters.budget && it.price > 120) return false;
+            return true;
+        });
+    }, [filters.budget, filters.pureVeg, filters.rating4]);
 
     const images = useMemo(() => {
         if (!normalizedTiffin) return [];
@@ -53,7 +148,11 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     const subtitle = useMemo(() => {
         if (!normalizedTiffin) return '—';
-        const fromMealType = normalizedTiffin.menu?.mealTypes?.[0]?.label;
+        const menu = normalizedTiffin.menu;
+        const fromMealType =
+            menu && typeof menu === 'object' && !Array.isArray(menu)
+                ? menu.mealTypes?.[0]?.label
+                : undefined;
         const fromPlan = normalizedTiffin.mealPlans?.[0];
         const fromCategory = Array.isArray(normalizedTiffin.category) ? normalizedTiffin.category[0] : undefined;
         return fromMealType || fromPlan || fromCategory || 'Meal service';
@@ -146,6 +245,29 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                     >
                         <Ionicons name="chevron-back" size={22} color={colors.text} />
                     </TouchableOpacity>
+
+                    {images.length > 0 ? (
+                        <View
+                            style={{
+                                position: 'absolute',
+                                top: insets.top + 14,
+                                right: 16,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: colors.card,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                borderRadius: 999,
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                            }}
+                        >
+                            <Ionicons name="images-outline" size={14} color={colors.textMuted} />
+                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: '800', color: colors.text }}>
+                                {images.length}
+                            </Text>
+                        </View>
+                    ) : null}
                 </View>
 
                 <View style={{ padding: 16 }}>
@@ -199,13 +321,283 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                         </View>
                     </View>
 
-                    {/* About */}
+                    {/* Filters (Restaurant-style) */}
                     <View style={{ marginBottom: 16 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 }}>About</Text>
-                        <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14 }}>
-                            <Text style={{ fontSize: 14, lineHeight: 22, color: colors.textMuted }}>
-                                {normalizedTiffin.description || normalizedTiffin.shortDescription || 'No description available.'}
-                            </Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingVertical: 2, alignItems: 'center' }}
+                        >
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (anyFilterActive) clearFilters();
+                                }}
+                                activeOpacity={0.85}
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: PRIMARY,
+                                    borderRadius: 999,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    marginRight: 10,
+                                    backgroundColor: anyFilterActive ? PRIMARY : colors.card,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '800', color: anyFilterActive ? '#FFFFFF' : PRIMARY }}>
+                                    Filters
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => toggleFilter('budget')}
+                                activeOpacity={0.85}
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: PRIMARY,
+                                    borderRadius: 999,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    marginRight: 10,
+                                    backgroundColor: filters.budget ? PRIMARY : colors.card,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '800', color: filters.budget ? '#FFFFFF' : PRIMARY }}>
+                                    Budget
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => toggleFilter('rating4')}
+                                activeOpacity={0.85}
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: PRIMARY,
+                                    borderRadius: 999,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    marginRight: 10,
+                                    backgroundColor: filters.rating4 ? PRIMARY : colors.card,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '800', color: filters.rating4 ? '#FFFFFF' : PRIMARY }}>
+                                    Rating 4.0+
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => toggleFilter('pureVeg')}
+                                activeOpacity={0.85}
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: PRIMARY,
+                                    borderRadius: 999,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    marginRight: 10,
+                                    backgroundColor: filters.pureVeg ? PRIMARY : colors.card,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '800', color: filters.pureVeg ? '#FFFFFF' : PRIMARY }}>
+                                    Pure Veg
+                                </Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+
+                    {/* Most ordered together (Restaurant alignment/spacing) */}
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 10 }}>
+                            Most ordered together
+                        </Text>
+                        <View
+                            style={{
+                                backgroundColor: colors.card,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {mostOrderedTogether.map((row, index) => {
+                                const badgeColor = row.veg ? '#1B5E20' : '#B71C1C';
+                                return (
+                                    <View
+                                        key={row.key}
+                                        style={{
+                                            position: 'relative',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            padding: 12,
+                                            minHeight: 116,
+                                        }}
+                                    >
+                                        <Image
+                                            source={row.image}
+                                            style={{ width: 92, height: 92, borderRadius: 12, backgroundColor: colors.border }}
+                                            resizeMode="cover"
+                                        />
+
+                                        <View style={{ flex: 1, paddingLeft: 12, paddingRight: 34 }}>
+                                            <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                                                {row.title}
+                                            </Text>
+                                            <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                                {row.subtitle}
+                                            </Text>
+                                            <Text
+                                                style={{ marginTop: 6, fontSize: 12, fontWeight: '600', lineHeight: 17, color: colors.textMuted }}
+                                                numberOfLines={2}
+                                            >
+                                                {row.description}
+                                            </Text>
+
+                                            <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center' }}>
+                                                <Text style={{ fontSize: 14, fontWeight: '900', color: colors.text }}>₹{row.price}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View
+                                            style={{
+                                                position: 'absolute',
+                                                top: 12,
+                                                right: 12,
+                                                width: 14,
+                                                height: 14,
+                                                borderRadius: 2,
+                                                borderWidth: 1.6,
+                                                borderColor: badgeColor,
+                                                backgroundColor: colors.card,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
+                                        >
+                                            <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: badgeColor }} />
+                                        </View>
+
+                                        {index < mostOrderedTogether.length - 1 ? (
+                                            <View
+                                                style={{
+                                                    position: 'absolute',
+                                                    left: 12,
+                                                    right: 12,
+                                                    bottom: 0,
+                                                    height: 1,
+                                                    backgroundColor: colors.border,
+                                                }}
+                                            />
+                                        ) : null}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </View>
+
+                    {/* Recommended for you */}
+                    <View style={{ marginBottom: 16 }}>
+                        <View
+                            style={{
+                                backgroundColor: colors.card,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <TouchableOpacity
+                                onPress={() => setRecommendedOpen((p) => !p)}
+                                activeOpacity={0.85}
+                                style={{
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 14,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <Text style={{ fontSize: 15, fontWeight: '900', color: colors.text }}>Recommended for you</Text>
+                                <View style={{ transform: [{ rotate: recommendedOpen ? '180deg' : '0deg' }] }}>
+                                    <Ionicons name="chevron-down" size={18} color={PRIMARY} />
+                                </View>
+                            </TouchableOpacity>
+
+                            {recommendedOpen ? (
+                                <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
+                                    {recommendedForYou.length === 0 ? (
+                                        <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textMuted, paddingVertical: 10 }}>
+                                            No items match the selected filters.
+                                        </Text>
+                                    ) : (
+                                        recommendedForYou.map((it) => {
+                                            const isOpen = Boolean(recommendedExpanded[it.key]);
+                                            return (
+                                                <View
+                                                    key={it.key}
+                                                    style={{
+                                                        marginTop: 10,
+                                                        backgroundColor: colors.card,
+                                                        borderRadius: 16,
+                                                        overflow: 'hidden',
+                                                        borderWidth: 1,
+                                                        borderColor: colors.border,
+                                                    }}
+                                                >
+                                                    <TouchableOpacity
+                                                        onPress={() =>
+                                                            setRecommendedExpanded((prev) => ({
+                                                                ...prev,
+                                                                [it.key]: !isOpen,
+                                                            }))
+                                                        }
+                                                        activeOpacity={0.85}
+                                                        style={{
+                                                            paddingHorizontal: 14,
+                                                            paddingVertical: 14,
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                        }}
+                                                    >
+                                                        <Text style={{ fontSize: 15, fontWeight: '900', color: colors.text }} numberOfLines={1}>
+                                                            {it.title}
+                                                        </Text>
+                                                        <View style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}>
+                                                            <Ionicons name="chevron-down" size={18} color={PRIMARY} />
+                                                        </View>
+                                                    </TouchableOpacity>
+
+                                                    {isOpen ? (
+                                                        <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
+                                                            <Text
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                    fontWeight: '600',
+                                                                    lineHeight: 17,
+                                                                    color: colors.textMuted,
+                                                                }}
+                                                            >
+                                                                {it.description}
+                                                            </Text>
+                                                            <View
+                                                                style={{
+                                                                    marginTop: 10,
+                                                                    flexDirection: 'row',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                }}
+                                                            >
+                                                                <Text style={{ fontSize: 14, fontWeight: '900', color: colors.text }}>₹{it.price}</Text>
+                                                                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textMuted }}>
+                                                                    {it.veg ? 'Veg' : 'Non-veg'} · {it.rating.toFixed(1)}★
+                                                                </Text>
+                                                            </View>
+                                                        </View>
+                                                    ) : null}
+                                                </View>
+                                            );
+                                        })
+                                    )}
+                                </View>
+                            ) : null}
                         </View>
                     </View>
 

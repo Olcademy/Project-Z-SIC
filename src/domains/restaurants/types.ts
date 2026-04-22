@@ -41,9 +41,14 @@ export interface Restaurant {
     };
     image_urls?: string[];
     opening_hours?: Record<string, string>;
+    openingHours?: string | string[];
     latitude?: string | number;
     longitude?: string | number;
     features?: string[];
+
+    // Some backend payloads include offers as non-normalized fields
+    hasOffer?: boolean;
+    offer?: unknown;
 }
 
 export interface RestaurantDetail extends Restaurant {

@@ -77,7 +77,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             });
 
             if (response.data?.success || response.data?.message === 'Login successful!') {
-                const derivedName = form.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+                const derivedName = form.email
+                    .split('@')[0]
+                    .replace(/[^a-zA-Z0-9]/g, ' ')
+                    .replace(/\b\w/g, (c) => c.toUpperCase())
+                    .trim();
                 const userData = response.data.user || {
                     name: derivedName,
                     email: form.email,
@@ -96,7 +100,15 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             setErrorMessage(response.data?.message || 'Login failed.');
         } catch (error: any) {
-            setErrorMessage(error?.response?.data?.message || 'Login failed.');
+            const code = error?.code;
+            const msg = String(error?.message || '');
+            if (code === 'ECONNABORTED' || msg.toLowerCase().includes('timeout')) {
+                setErrorMessage('Login is taking too long. Please try again in a moment.');
+            } else if (msg.toLowerCase().includes('network error')) {
+                setErrorMessage('Network error. Check your internet and API base URL, then try again.');
+            } else {
+                setErrorMessage(error?.response?.data?.message || 'Login failed.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -318,82 +330,84 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                         className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm"
                         style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
                     >
-                    <Text className="text-lg font-semibold text-gray-900 dark:text-slate-100">Reset Password</Text>
-                    <Text className="text-sm text-gray-600 dark:text-slate-300 mt-2">Enter the OTP sent to your email.</Text>
+                        <Text className="text-lg font-semibold text-gray-900 dark:text-slate-100">Reset Password</Text>
+                        <Text className="text-sm text-gray-600 dark:text-slate-300 mt-2">Enter the OTP sent to your email.</Text>
 
-                    {otpError ? <Text className="text-sm text-red-600 mt-3 text-center">{otpError}</Text> : null}
+                        {otpError ? <Text className="text-sm text-red-600 mt-3 text-center">{otpError}</Text> : null}
 
-                    <View className="flex-row justify-between mt-5">
-                        {otpArray.map((digit, index) => (
-                            <TextInput
-                                key={index}
-                                ref={(el) => {
-                                    otpRefs.current[index] = el;
-                                }}
-                                className="w-11 h-12 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl text-center text-lg text-gray-900 dark:text-slate-100"
-                                keyboardType="numeric"
-                                maxLength={1}
-                                value={digit}
-                                onChangeText={(text) => handleOtpChange(index, text)}
-                                onKeyPress={(e) => handleOtpKeyDown(index, e)}
-                                autoFocus={index === 0}
-                            />
-                        ))}
-                    </View>
-
-                    <TouchableOpacity
-                        className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
-                        onPress={verifyOtp}
-                        disabled={otpLoading || otpArray.join('').length !== 6}
-                    >
-                        {otpLoading ? (
-                            <ActivityIndicator color="#ffffff" />
-                        ) : (
-                            <Text className="text-white text-base font-semibold">Verify OTP</Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity className="mt-3" onPress={resendOtp} disabled={resendDisabled || otpLoading}>
-                        <Text className={`text-sm text-center ${resendDisabled || otpLoading ? 'text-gray-400' : 'text-[#02757A]'}`}>
-                            {resendDisabled ? `Resend in ${timer}s` : 'Resend OTP'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {isOtpVerified ? (
-                        <View className="mt-6">
-                            <Text className="text-sm text-gray-700 dark:text-slate-300 mb-2">New Password</Text>
-                            <TextInput
-                                className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
-                                placeholder="New password"
-                                placeholderTextColor={placeholderTextColor}
-                                secureTextEntry
-                                value={newPassword}
-                                onChangeText={setNewPassword}
-                            />
-
-                            <Text className="text-sm text-gray-700 dark:text-slate-300 mt-5 mb-2">Confirm Password</Text>
-                            <TextInput
-                                className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
-                                placeholder="Confirm password"
-                                placeholderTextColor={placeholderTextColor}
-                                secureTextEntry
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                            />
-
-                            <TouchableOpacity
-                                className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
-                                onPress={resetPassword}
-                                disabled={resetLoading}
-                            >
-                                {resetLoading ? (
-                                    <ActivityIndicator color="#ffffff" />
-                                ) : (
-                                    <Text className="text-white text-base font-semibold">Update Password</Text>
-                                )}
-                            </TouchableOpacity>
+                        <View className="flex-row justify-between mt-5">
+                            {otpArray.map((digit, index) => (
+                                <TextInput
+                                    key={index}
+                                    ref={(el) => {
+                                        otpRefs.current[index] = el;
+                                    }}
+                                    className="w-11 h-12 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl text-center text-lg text-gray-900 dark:text-slate-100"
+                                    keyboardType="numeric"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChangeText={(text) => handleOtpChange(index, text)}
+                                    onKeyPress={(e) => handleOtpKeyDown(index, e)}
+                                    autoFocus={index === 0}
+                                />
+                            ))}
                         </View>
-                    ) : null}
+
+                        <TouchableOpacity
+                            className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
+                            onPress={verifyOtp}
+                            disabled={otpLoading || otpArray.join('').length !== 6}
+                        >
+                            {otpLoading ? (
+                                <ActivityIndicator color="#ffffff" />
+                            ) : (
+                                <Text className="text-white text-base font-semibold">Verify OTP</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity className="mt-3" onPress={resendOtp} disabled={resendDisabled || otpLoading}>
+                            <Text
+                                className={`text-sm text-center ${resendDisabled || otpLoading ? 'text-gray-400' : 'text-[#02757A]'}`}
+                            >
+                                {resendDisabled ? `Resend in ${timer}s` : 'Resend OTP'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {isOtpVerified ? (
+                            <View className="mt-6">
+                                <Text className="text-sm text-gray-700 dark:text-slate-300 mb-2">New Password</Text>
+                                <TextInput
+                                    className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
+                                    placeholder="New password"
+                                    placeholderTextColor={placeholderTextColor}
+                                    secureTextEntry
+                                    value={newPassword}
+                                    onChangeText={setNewPassword}
+                                />
+
+                                <Text className="text-sm text-gray-700 dark:text-slate-300 mt-5 mb-2">Confirm Password</Text>
+                                <TextInput
+                                    className="border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-2xl px-4 py-3 text-base text-gray-900 dark:text-slate-100"
+                                    placeholder="Confirm password"
+                                    placeholderTextColor={placeholderTextColor}
+                                    secureTextEntry
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                />
+
+                                <TouchableOpacity
+                                    className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
+                                    onPress={resetPassword}
+                                    disabled={resetLoading}
+                                >
+                                    {resetLoading ? (
+                                        <ActivityIndicator color="#ffffff" />
+                                    ) : (
+                                        <Text className="text-white text-base font-semibold">Update Password</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        ) : null}
                     </View>
                 </View>
             ) : null}

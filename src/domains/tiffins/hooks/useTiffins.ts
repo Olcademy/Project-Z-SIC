@@ -27,6 +27,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 const normalizeTiffin = (item: Tiffin): Tiffin => {
     const name = item.kitchenName || item.name;
     const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
+    const serviceDays =
+        item.menu && typeof item.menu === 'object' && !Array.isArray(item.menu)
+            ? item.menu.serviceDays
+            : undefined;
 
     return {
         ...item,
@@ -35,7 +39,7 @@ const normalizeTiffin = (item: Tiffin): Tiffin => {
         imageUrl: item.imageUrl || images[0],
         images,
         coverageAreas: item.deliveryCity || item.coverageAreas,
-        scheduleDays: item.menu?.serviceDays || item.scheduleDays,
+        scheduleDays: serviceDays || item.scheduleDays,
     } as Tiffin;
 };
 
@@ -138,7 +142,7 @@ export const useTiffinDetail = (id: string) => {
                 throw new Error('Invalid tiffin detail payload.');
             }
 
-            const normalized = normalizeTiffin(payload as TiffinDetail);
+            const normalized = normalizeTiffin(payload as unknown as Tiffin);
             if (!normalized._id) {
                 throw new Error('Missing tiffin id in detail payload.');
             }

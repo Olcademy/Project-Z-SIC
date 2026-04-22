@@ -10,16 +10,17 @@ import { RestaurantCard } from '../components/RestaurantCard';
 import { EmptyState } from '@/ui/components/EmptyState';
 import { ErrorState } from '@/ui/components/ErrorState';
 import { LoadingSkeletonList } from '@/ui/components/LoadingSkeletonList';
-import { ScreenHeader } from '@/ui/components/ScreenHeader';
 import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
+import { useUser } from '@/ui/context/UserContext';
 
 type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantList'>;
 type SortOption = 'default' | 'price-low' | 'price-high' | 'rating' | 'distance';
 
 export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const theme = useTheme();
+    const { user } = useUser();
 
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -162,8 +163,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (selectedCuisine && !cuisines.includes(selectedCuisine)) return false;
             if (vegOnly && !isVegRestaurant(item)) return false;
-            if (topRated && getRatingValue(item) < 4.0) return false;
-            if (hasOffers && !hasAnyOffer(item)) return false;
+            if (topRated && Number(item.rating ?? 0) < 4.0) return false;
+            if (hasOffers && !item.hasOffer && !item.offer) return false;
             return true;
         });
 
@@ -183,22 +184,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
 
         return filtered;
     }, [allRestaurants, debouncedQuery, selectedCuisine, vegOnly, topRated, hasOffers, sortBy]);
-
-    const renderChip = (label: string, active: boolean, onPress: () => void) => (
-        <TouchableOpacity
-            key={label}
-            data-testid={`filter-chip-${label.toLowerCase()}`}
-            style={{
-                marginRight: 8, borderRadius: 20, borderWidth: 1,
-                paddingHorizontal: 12, paddingVertical: 8,
-                backgroundColor: active ? '#02757A' : theme.chipBg,
-                borderColor: active ? '#02757A' : theme.chipBorder,
-            }}
-            onPress={onPress}
-        >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: active ? '#fff' : theme.chipText }}>{label}</Text>
-        </TouchableOpacity>
-    );
 
     const handleRestaurantPress = useCallback((item: Restaurant) => {
         navigation.navigate('RestaurantDetail', { item });
@@ -232,20 +217,38 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.bg }}>
-            <View style={{ backgroundColor: theme.headerBgRestaurant, paddingHorizontal: 20, paddingTop: 48, paddingBottom: 24, overflow: 'visible' }}>
-                <View style={{ position: 'absolute', right: 0, top: 0, height: 128, width: 128, borderRadius: 64, backgroundColor: theme.headerCircleRestaurant }} />
-                <View style={{ position: 'absolute', left: 0, bottom: 0, height: 96, width: 96, borderRadius: 48, backgroundColor: theme.headerCircleRestaurant }} />
-                <ScreenHeader title="Restaurants" subtitle="Takeaway and dining picks" />
-                <View style={{ marginTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+            <View style={{ backgroundColor: '#FFF9F1', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 24 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 28, fontWeight: '700', color: '#1A1A1A' }}>Hey, {user?.name?.split(' ')[0] || 'Ganesh'}</Text>
+                            <Text style={{ fontSize: 24, marginLeft: 8 }}>👋</Text>
+                        </View>
+                        <Text style={{ fontSize: 16, color: '#4A4A4A', marginTop: 4, fontWeight: '500' }}>What are you craving today?</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('SettingsStack' as any)}
+                        style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#5D69BE', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>{(user?.name || 'G')[0].toUpperCase()}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 16, height: 44, borderWidth: 1, borderColor: '#F0F0F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 1 }}>
+                    <Ionicons name="search" size={18} color="#666" />
                     <TextInput
                         data-testid="search-input"
-                        style={{ backgroundColor: theme.inputBg, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 18, fontSize: 14, color: theme.inputText }}
-                        placeholder="Search by name, cuisine, or dish"
-                        placeholderTextColor={theme.inputPlaceholder}
+                        style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#1A1A1A' }}
+                        placeholder={'Search "Tandoori"'}
+                        placeholderTextColor="#999"
                         value={query}
                         onChangeText={setQuery}
                     />
+                    <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 10 }} />
+                    <TouchableOpacity onPress={() => { }}>
+                        <Ionicons name="mic" size={18} color="#1A1A1A" />
+                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -267,7 +270,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         selected: vegOnly ? 'veg' : null,
                         onSelect: () => setVegOnly(p => !p),
                     },
-
                     {
                         title: 'Cuisine',
                         options: cuisineOptions.map(c => ({ value: c, label: c })),
@@ -277,27 +279,43 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                 ]}
             />
 
-            <View style={{ backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' }}>
+            <View style={{ backgroundColor: '#FFFFFF' }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' }}>
                     <TouchableOpacity
                         onPress={() => setShowFilters(true)}
-                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: (vegOnly || topRated || hasOffers || selectedCuisine) ? '#02757A' : theme.chipBg, borderColor: (vegOnly || topRated || hasOffers || selectedCuisine) ? '#02757A' : theme.chipBorder }}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                     >
-                        <Ionicons name="options-outline" size={13} color={(vegOnly || topRated || hasOffers || selectedCuisine) ? '#fff' : theme.chipText} style={{ marginRight: 4 }} />
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: (vegOnly || topRated || hasOffers || selectedCuisine) ? '#fff' : theme.chipText }}>Filters{(vegOnly || topRated || hasOffers || selectedCuisine) ? ' •' : ''}</Text>
+                        <Ionicons name="options-outline" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Filters</Text>
+                        <Ionicons name="caret-down" size={12} color="#FF7F50" style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
+
                     <TouchableOpacity
-                        onPress={() => setShowFilters(true)}
-                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: sortBy !== 'default' ? '#02757A' : theme.chipBg, borderColor: sortBy !== 'default' ? '#02757A' : theme.chipBorder }}
+                        onPress={() => { }}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                     >
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: sortBy !== 'default' ? '#fff' : theme.chipText }}>⇅ {sortBy !== 'default' ? activeSortLabel : 'Sort'}</Text>
+                        <Ionicons name="options-outline" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Near & Fast</Text>
                     </TouchableOpacity>
-                    <View style={{ width: 1, height: 20, backgroundColor: theme.border, marginRight: 8 }} />
-                    {renderChip('Veg', vegOnly, () => setVegOnly(p => !p))}
-                    {renderChip('Ratings 4.0+', topRated, () => setTopRated(p => !p))}
-                    {renderChip('Offers', hasOffers, () => setHasOffers(p => !p))}
-                    {cuisineOptions.map((cuisine) => renderChip(cuisine, selectedCuisine === cuisine, () => setSelectedCuisine(selectedCuisine === cuisine ? null : cuisine)))}
+
+                    <TouchableOpacity
+                        onPress={() => setTopRated(p => !p)}
+                        style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Rating 4.0+</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setVegOnly(p => !p)}
+                        style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Pure Veg</Text>
+                    </TouchableOpacity>
                 </ScrollView>
+            </View>
+
+            <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#4A4A4A' }}>Recommended for you</Text>
             </View>
 
             {isLoading ? (
@@ -309,7 +327,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     data={filteredAndSortedRestaurants}
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 20 }}
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 }}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}

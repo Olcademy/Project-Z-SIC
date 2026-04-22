@@ -45,10 +45,8 @@ export interface Restaurant {
     latitude?: string | number;
     longitude?: string | number;
     features?: string[];
-
-    // Some backend payloads include offers as non-normalized fields
     hasOffer?: boolean;
-    offer?: unknown;
+    offer?: string | any;
 }
 
 export interface RestaurantDetail extends Restaurant {

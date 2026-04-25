@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearUserAuthToken, hydrateUserAuthToken } from '@/platform/auth/token';
+import { registerSessionInvalidationHandler, resetSessionInvalidation } from '@/platform/auth/sessionBroadcast';
 
 export interface User {
     name: string;
@@ -82,6 +83,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loadUser();
     }, []);
 
+    // Register this context's logout as the handler for stale-session 404s.
+    // When the API interceptor detects "User not found", it calls logout(),
+    // which sets user → null and disables all isAuthenticated-gated queries.
+    useEffect(() => {
+        registerSessionInvalidationHandler(() => {
+            setUser(null);
+            clearUserAuthToken().catch(() => {});
+        });
+    }, []);
+
     const updateProfile = useCallback(async (data: Partial<Omit<User, 'isGuest' | 'email'>>) => {
         if (!user || user.isGuest) return;
 
@@ -106,6 +117,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             location: userData.location || 'India',
             isGuest: false 
         };
+        // Clear any stale-session flag so all authenticated hooks re-enable.
+        resetSessionInvalidation();
         setUser(newUser);
         try {
             setShouldPersistUser(rememberMe);

@@ -3,6 +3,7 @@ import { Restaurant, RestaurantDetail } from '@/domains/restaurants/types';
 import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
+import { useUser } from '@/ui/context/UserContext';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
@@ -130,6 +131,9 @@ export const useRestaurantMenuSections = (id: string) => {
 };
 
 export const useTakeawayRecentlyViewed = () => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-recently-viewed'],
         queryFn: async () => {
@@ -137,6 +141,7 @@ export const useTakeawayRecentlyViewed = () => {
             const payload = data?.data ?? data;
             return Array.isArray(payload) ? payload : [];
         },
+        enabled: isAuthenticated,
     });
 };
 
@@ -150,6 +155,9 @@ export const useTrackTakeawayRecentlyViewed = () => {
 };
 
 export const useTakeawayFavorites = () => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-favorites'],
         queryFn: async () => {
@@ -157,28 +165,47 @@ export const useTakeawayFavorites = () => {
             const payload = data?.data ?? data;
             return Array.isArray(payload) ? payload : [];
         },
+        enabled: isAuthenticated,
     });
 };
 
 export const useTakeawayFavoriteStatus = (id: string, options?: { enabled?: boolean }) => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-favorite-status', id],
         queryFn: async () => {
-            const { data } = await apiClient.get(ENDPOINTS.takeaway.favorites.check(id));
-            return data?.data ?? data;
+            try {
+                const { data } = await apiClient.get(ENDPOINTS.takeaway.favorites.check(id));
+                return data?.data ?? data;
+            } catch (error: any) {
+                // Backend's favCheck returns 404 "User not found" when the user
+                // record doesn't exist server-side. Treat as "not favorited".
+                if (error?.response?.status === 404) {
+                    return null;
+                }
+                throw error;
+            }
         },
-        enabled: (options?.enabled !== false) && !!id,
+        enabled: (options?.enabled !== false) && !!id && isAuthenticated,
+        retry: 0,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
     });
 };
 
 export const useTakeawayLikeStatus = (id: string) => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-like-status', id],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.favorites.isLike(id));
             return data?.data ?? data;
         },
-        enabled: !!id,
+        enabled: !!id && isAuthenticated,
     });
 };
 
@@ -212,16 +239,22 @@ export const useLikeTakeaway = () => {
 type PaginationParams = { page?: number; limit?: number };
 
 export const useTakeawayOrders = (params?: PaginationParams) => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-orders', params],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.orders.list, { params });
             return data?.data ?? data;
         },
+        enabled: isAuthenticated,
     });
 };
 
 export const useTakeawayFavoriteOrders = (params?: PaginationParams) => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
     const queryParams = { type: 'Firm', ...(params || {}) };
     return useQuery({
         queryKey: ['takeaway-favorite-orders', queryParams],
@@ -229,6 +262,7 @@ export const useTakeawayFavoriteOrders = (params?: PaginationParams) => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.orders.favoriteList, { params: queryParams });
             return data?.data ?? data;
         },
+        enabled: isAuthenticated,
     });
 };
 
@@ -260,12 +294,16 @@ export const useTakeawayOffers = (params: ApplyOfferParams) => {
 };
 
 export const useTakeawayNotifications = () => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['takeaway-notifications'],
         queryFn: async () => {
             const { data } = await apiClient.get(ENDPOINTS.takeaway.notifications.list);
             return data?.data ?? data;
         },
+        enabled: isAuthenticated,
     });
 };
 

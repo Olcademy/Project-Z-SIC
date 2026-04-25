@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { AppConfig } from '@/platform/config';
+import { clearUserAuthToken } from '@/platform/auth/token';
+import { broadcastSessionInvalidated } from '@/platform/auth/sessionBroadcast';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_API_BASE_URL = 'https://project-z-backend-apis.onrender.com';
 
@@ -43,12 +46,29 @@ apiClient.interceptors.response.use(
         const status = error.response?.status || 'NO_RESPONSE';
         const message = error.message || 'Unknown error';
         const code = error.code || 'NO_CODE';
+        const responseData = error.response?.data;
+
+        // 401 Unauthorized = token expired or revoked → real session invalidation.
+        if (status === 401) {
+            console.warn(`[API] Token expired or invalid (${method} ${url}). Logging out.`);
+            clearUserAuthToken().catch(() => {});
+            AsyncStorage.removeItem('@sic_user_data').catch(() => {});
+            broadcastSessionInvalidated();
+            return Promise.reject(error);
+        }
+
+        // 404 "User not found" on specific endpoints (e.g. favCheck) is a backend
+        // quirk — do NOT log out the user. The query-level try/catch handles it.
+        if (status === 404 && responseData?.message === 'User not found') {
+            // Suppress the noisy error; query will return null gracefully.
+            return Promise.reject(error);
+        }
 
         console.error(`[API ERROR] ${method} ${baseURL}${url} - Status: ${status} - Code: ${code} - ${message}`);
-
-        if (error.response?.data) {
-            console.error('[API ERROR DATA]', error.response.data);
+        if (responseData) {
+            console.error('[API ERROR DATA]', responseData);
         }
+
         return Promise.reject(error);
     }
 );

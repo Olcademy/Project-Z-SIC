@@ -3,6 +3,7 @@ import { Tiffin, TiffinDetail } from '@/domains/tiffins/types';
 import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
+import { useUser } from '@/ui/context/UserContext';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
@@ -165,6 +166,9 @@ export const useTiffinOffers = (id: string) => {
 };
 
 export const useTiffinFavorites = () => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['tiffin-favorites'],
         queryFn: async () => {
@@ -172,12 +176,15 @@ export const useTiffinFavorites = () => {
             const payload = data?.data ?? data;
             return Array.isArray(payload) ? payload : [];
         },
+        enabled: isAuthenticated,
     });
 };
 
 type PaginationParams = { page?: number; limit?: number };
 
 export const useTiffinFavoriteOrders = (params?: PaginationParams) => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
     const queryParams = { type: 'Tiffin', ...(params || {}) };
     return useQuery({
         queryKey: ['tiffin-favorite-orders', queryParams],
@@ -185,6 +192,7 @@ export const useTiffinFavoriteOrders = (params?: PaginationParams) => {
             const { data } = await apiClient.get(ENDPOINTS.tiffins.favoriteOrders, { params: queryParams });
             return data?.data ?? data;
         },
+        enabled: isAuthenticated,
     });
 };
 
@@ -198,6 +206,9 @@ export const useToggleTiffinOrderFavorite = () => {
 };
 
 export const useTiffinRecentlyViewed = () => {
+    const { user } = useUser();
+    const isAuthenticated = !!user && !user.isGuest;
+
     return useQuery({
         queryKey: ['tiffin-recently-viewed'],
         queryFn: async () => {
@@ -205,6 +216,7 @@ export const useTiffinRecentlyViewed = () => {
             const payload = data?.data ?? data;
             return Array.isArray(payload) ? payload : [];
         },
+        enabled: isAuthenticated,
     });
 };
 

@@ -78,11 +78,11 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
+        <SafeAreaView className="flex-1 bg-[#FFF9F1] dark:bg-slate-950">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
-                <View className="bg-[#f5efe8] dark:bg-slate-900 px-6 pt-12 pb-8">
-                    <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#efe6db] dark:bg-slate-800" />
-                    <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#efe6db] dark:bg-slate-800" />
+                <View className="bg-[#FFF5E6] dark:bg-slate-900 px-6 pt-12 pb-8">
+                    <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
+                    <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
                     <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">Create account</Text>
                     <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">Join SIC and personalize your discovery.</Text>
                 </View>
@@ -143,13 +143,13 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
                             activeOpacity={0.8}
                         >
                             <View
-                                className={`h-5 w-5 rounded border ${form.accept ? 'bg-[#02757A] border-[#02757A]' : 'border-gray-300 dark:border-slate-600'}`}
+                                className={`h-5 w-5 rounded border ${form.accept ? 'bg-[#FF7A00] border-[#FF7A00]' : 'border-gray-300 dark:border-slate-600'}`}
                             />
                             <Text className="ml-3 text-sm text-gray-700 dark:text-slate-300">I accept the terms and conditions</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl"
+                            className="bg-[#FF7A00] mt-6 px-5 py-4 rounded-2xl"
                             onPress={handleSignup}
                             disabled={isLoading}
                         >
@@ -165,7 +165,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
                             onPress={() => navigation.replace('Login')}
                         >
                             <Text className="text-sm text-gray-700 dark:text-slate-300 text-center">
-                                Already have an account? <Text className="text-[#02757A] font-semibold">Login</Text>
+                                Already have an account? <Text className="text-[#FF7A00] font-semibold">Login</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>

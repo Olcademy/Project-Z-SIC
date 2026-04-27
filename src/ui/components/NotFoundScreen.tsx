@@ -17,7 +17,7 @@ export const NotFoundScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
             <TouchableOpacity
                 data-testid="go-home-button"
-                className="bg-[#02757A] rounded-2xl px-8 py-4"
+                className="bg-[#FF7A00] rounded-2xl px-8 py-4"
                 onPress={() => navigation.navigate('MainTabs')}
             >
                 <Text className="text-white font-semibold text-base">Go to Home</Text>

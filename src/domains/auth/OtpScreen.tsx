@@ -147,10 +147,10 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     return (
-        <View className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
-            <View className="bg-[#e6f4f4] dark:bg-slate-900 px-6 pt-12 pb-8">
-                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef] dark:bg-slate-800" />
-                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+        <View className="flex-1 bg-[#FFF9F1] dark:bg-slate-950">
+            <View className="bg-[#FFF5E6] dark:bg-slate-900 px-6 pt-12 pb-8">
+                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
+                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
                 <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">Verify Email</Text>
                 <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">
                     Enter the 6-digit code sent to <Text className="font-semibold">{email}</Text>.
@@ -186,7 +186,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             <TouchableOpacity
-                className="bg-[#02757A] mt-8 px-5 py-4 rounded-2xl items-center"
+                className="bg-[#FF7A00] mt-8 px-5 py-4 rounded-2xl items-center"
                 onPress={verifyOtp}
                 disabled={isVerifying || otpArray.join('').length !== 6}
             >
@@ -200,7 +200,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
             <View className="flex-row justify-center items-center mt-6">
                 <Text className="text-sm text-gray-600 dark:text-slate-300">Didn't receive code?</Text>
                 <TouchableOpacity onPress={resendOtp} disabled={resendDisabled || isResending}>
-                    <Text className={`ml-2 text-sm font-semibold ${resendDisabled || isResending ? 'text-gray-400' : 'text-[#02757A]'}`}>
+                    <Text className={`ml-2 text-sm font-semibold ${resendDisabled || isResending ? 'text-gray-400' : 'text-[#FF7A00]'}`}>
                         {isResending ? 'Sending...' : resendDisabled ? `Resend in ${formatTime(timer)}` : 'Resend Code'}
                     </Text>
                 </TouchableOpacity>

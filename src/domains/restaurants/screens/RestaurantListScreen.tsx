@@ -205,7 +205,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         if (!isFetchingNextPage) return null;
         return (
             <View style={{ paddingVertical: 16 }}>
-                <ActivityIndicator size="small" color="#02757A" />
+                <ActivityIndicator size="small" color="#FF7A00" />
             </View>
         );
     };
@@ -256,7 +256,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                 visible={showFilters}
                 onClose={() => setShowFilters(false)}
                 onClear={() => { setVegOnly(false); setTopRated(false); setHasOffers(false); setSelectedCuisine(null); setSortBy('default'); }}
-                accentColor="#02757A"
+                accentColor="#FF7A00"
                 sections={[
                     {
                         title: 'Sort by',

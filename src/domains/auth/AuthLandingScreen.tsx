@@ -30,10 +30,10 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     return (
-        <View className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
-            <View className="bg-[#e6f4f4] dark:bg-slate-900 px-6 pt-14 pb-10">
-                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef] dark:bg-slate-800" />
-                <View className="absolute left-[-30px] bottom-[-30px] h-28 w-28 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+        <View className="flex-1 bg-[#FFF9F1] dark:bg-slate-950">
+            <View className="bg-[#FFF5E6] dark:bg-slate-900 px-6 pt-14 pb-10">
+                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
+                <View className="absolute left-[-30px] bottom-[-30px] h-28 w-28 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
                 <Text className="text-3xl font-bold text-gray-900 dark:text-slate-100">Welcome to SIC</Text>
                 <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">Discover restaurants, tiffins, and events around you.</Text>
             </View>
@@ -44,7 +44,7 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
                     style={[isDark ? null : { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }]}
                 >
                 <TouchableOpacity
-                    className="bg-[#02757A] px-5 py-4 rounded-2xl"
+                    className="bg-[#FF7A00] px-5 py-4 rounded-2xl"
                     onPress={() => navigation.navigate('Login')}
                     disabled={isLoading}
                 >
@@ -65,7 +65,7 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
                     disabled={isLoading}
                 >
                     {isLoading ? (
-                        <ActivityIndicator color="#02757A" />
+                        <ActivityIndicator color="#FF7A00" />
                     ) : (
                         <Text className="text-gray-900 dark:text-slate-100 text-base font-semibold text-center">Continue as Guest</Text>
                     )}

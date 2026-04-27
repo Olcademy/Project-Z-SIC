@@ -8,7 +8,7 @@ export const SplashScreen: React.FC = () => {
             <Text style={styles.title}>Welcome to SIC</Text>
             <Text style={styles.subtitle}>Discovery Phase</Text>
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#02757A" />
+                <ActivityIndicator size="large" color="#FF7A00" />
             </View>
         </View>
     );

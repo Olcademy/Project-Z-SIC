@@ -24,7 +24,7 @@ type Props = {
 };
 
 export const FilterBottomSheet: React.FC<Props> = ({
-    visible, onClose, onClear, sections, accentColor = '#02757A',
+    visible, onClose, onClear, sections, accentColor = '#FF7A00',
 }) => {
     const theme = useTheme();
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;

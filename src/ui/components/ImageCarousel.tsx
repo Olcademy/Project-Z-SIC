@@ -74,7 +74,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
                     {images.map((_, dotIndex) => (
                         <View
                             key={`dot-${dotIndex}`}
-                            className={`h-2 w-2 rounded-full mx-1 ${dotIndex === index ? 'bg-[#02757A]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                            className={`h-2 w-2 rounded-full mx-1 ${dotIndex === index ? 'bg-[#FF7A00]' : 'bg-gray-300 dark:bg-gray-700'}`}
                         />
                     ))}
                 </View>

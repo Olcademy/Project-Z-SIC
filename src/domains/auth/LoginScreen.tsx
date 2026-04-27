@@ -233,10 +233,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#f2f6f6] dark:bg-slate-950">
-            <View className="bg-[#e6f4f4] dark:bg-slate-900 px-6 pt-12 pb-8">
-                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#d6efef] dark:bg-slate-800" />
-                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#d6efef] dark:bg-slate-800" />
+        <SafeAreaView className="flex-1 bg-[#FFF9F1] dark:bg-slate-950">
+            <View className="bg-[#FFF5E6] dark:bg-slate-900 px-6 pt-12 pb-8">
+                <View className="absolute right-[-40px] top-[-30px] h-36 w-36 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
+                <View className="absolute left-[-30px] bottom-[-30px] h-24 w-24 rounded-full bg-[#FFE0C7] dark:bg-slate-800" />
                 <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">Welcome back</Text>
                 <Text className="text-sm text-gray-700 dark:text-slate-300 mt-2">Sign in to continue your discovery journey.</Text>
             </View>
@@ -273,17 +273,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                             onPress={() => setRememberMe((prev) => !prev)}
                         >
                             <View
-                                className={`h-5 w-5 rounded border ${rememberMe ? 'bg-[#02757A] border-[#02757A]' : 'border-gray-300 dark:border-slate-600'}`}
+                                className={`h-5 w-5 rounded border ${rememberMe ? 'bg-[#FF7A00] border-[#FF7A00]' : 'border-gray-300 dark:border-slate-600'}`}
                             />
                             <Text className="ml-2 text-sm text-gray-700 dark:text-slate-300">Remember me</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleForgotPassword} disabled={otpLoading}>
-                            <Text className="text-sm text-[#02757A] font-semibold">Forgot password?</Text>
+                            <Text className="text-sm text-[#FF7A00] font-semibold">Forgot password?</Text>
                         </TouchableOpacity>
                     </View>
 
                     <TouchableOpacity
-                        className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl"
+                        className="bg-[#FF7A00] mt-6 px-5 py-4 rounded-2xl"
                         onPress={handleLogin}
                         disabled={isLoading}
                     >
@@ -322,7 +322,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
                     <TouchableOpacity className="mt-6" onPress={() => navigation.navigate('Signup')}>
                         <Text className="text-sm text-gray-700 dark:text-slate-300 text-center">
-                            New here? <Text className="text-[#02757A] font-semibold">Create an account</Text>
+                            New here? <Text className="text-[#FF7A00] font-semibold">Create an account</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -358,7 +358,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                         </View>
 
                         <TouchableOpacity
-                            className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
+                            className="bg-[#FF7A00] mt-6 px-5 py-4 rounded-2xl items-center"
                             onPress={verifyOtp}
                             disabled={otpLoading || otpArray.join('').length !== 6}
                         >
@@ -371,7 +371,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
                         <TouchableOpacity className="mt-3" onPress={resendOtp} disabled={resendDisabled || otpLoading}>
                             <Text
-                                className={`text-sm text-center ${resendDisabled || otpLoading ? 'text-gray-400' : 'text-[#02757A]'}`}
+                                className={`text-sm text-center ${resendDisabled || otpLoading ? 'text-gray-400' : 'text-[#FF7A00]'}`}
                             >
                                 {resendDisabled ? `Resend in ${timer}s` : 'Resend OTP'}
                             </Text>
@@ -400,7 +400,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                 />
 
                                 <TouchableOpacity
-                                    className="bg-[#02757A] mt-6 px-5 py-4 rounded-2xl items-center"
+                                    className="bg-[#FF7A00] mt-6 px-5 py-4 rounded-2xl items-center"
                                     onPress={resetPassword}
                                     disabled={resetLoading}
                                 >

@@ -66,7 +66,7 @@ export const OAuthWebViewScreen: React.FC<Props> = ({ route, navigation }) => {
                 <View className="flex-1">
                     {isLoading ? (
                         <View className="absolute top-0 left-0 right-0 h-1 items-center justify-center z-10">
-                            <ActivityIndicator size="small" color="#02757A" />
+                            <ActivityIndicator size="small" color="#FF7A00" />
                         </View>
                     ) : null}
                     <WebView

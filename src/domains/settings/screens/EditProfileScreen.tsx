@@ -46,7 +46,7 @@ export const EditProfileScreen: React.FC = () => {
     if (loading) {
         return (
             <View style={{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#02757A" />
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
@@ -118,8 +118,8 @@ export const EditProfileScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1, backgroundColor: theme.bg }}
         >
-            <View style={{ backgroundColor: theme.headerBgSettings, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 16, overflow: 'hidden' }}>
-                <View style={{ position: 'absolute', right: -20, top: -10, width: 80, height: 80, borderRadius: 40, backgroundColor: theme.headerCircleSettings, opacity: 0.5 }} />
+            <View style={{ backgroundColor: '#FFF5E6', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 16, overflow: 'hidden' }}>
+                <View style={{ position: 'absolute', right: -20, top: -10, width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFE0C7', opacity: 0.5 }} />
                 <ScreenHeader 
                     title="Edit Profile" 
                     subtitle="Customize your public information" 
@@ -148,7 +148,7 @@ export const EditProfileScreen: React.FC = () => {
                             elevation: 4,
                         }}
                     >
-                        <View style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden', backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden', backgroundColor: '#FFF5E6', justifyContent: 'center', alignItems: 'center' }}>
                             {photoURL ? (
                                 <Image source={{ uri: photoURL }} style={{ width: '100%', height: '100%' }} />
                             ) : (
@@ -159,7 +159,7 @@ export const EditProfileScreen: React.FC = () => {
                             position: 'absolute',
                             bottom: -2,
                             right: -2,
-                            backgroundColor: '#02757A',
+                            backgroundColor: '#FF7A00',
                             width: 26,
                             height: 26,
                             borderRadius: 13,
@@ -175,12 +175,12 @@ export const EditProfileScreen: React.FC = () => {
                             <Ionicons name="camera" size={14} color="#fff" />
                         </View>
                     </TouchableOpacity>
-                    <Text style={{ marginTop: 8, fontSize: 12, fontWeight: '600', color: '#02757A' }}>Change Profile Photo</Text>
+                    <Text style={{ marginTop: 8, fontSize: 12, fontWeight: '600', color: '#FF7A00' }}>Change Profile Photo</Text>
                 </View>
 
                 {/* Name field */}
                 <View style={{ marginBottom: 16 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: focusedField === 'name' ? '#02757A' : theme.text, marginBottom: 8, marginLeft: 4 }}>FULL NAME</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: focusedField === 'name' ? '#FF7A00' : theme.text, marginBottom: 8, marginLeft: 4 }}>FULL NAME</Text>
                     <TextInput
                         style={{
                             backgroundColor: theme.card,
@@ -189,7 +189,7 @@ export const EditProfileScreen: React.FC = () => {
                             fontSize: 15,
                             color: theme.text,
                             borderWidth: 1.5,
-                            borderColor: focusedField === 'name' ? '#02757A' : theme.border,
+                            borderColor: focusedField === 'name' ? '#FF7A00' : theme.border,
                         }}
                         value={name}
                         onChangeText={setName}
@@ -202,7 +202,7 @@ export const EditProfileScreen: React.FC = () => {
 
                 {/* Phone number field with country code */}
                 <View style={{ marginBottom: 16 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: focusedField === 'phone' ? '#02757A' : theme.text, marginBottom: 8, marginLeft: 4 }}>PHONE NUMBER</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: focusedField === 'phone' ? '#FF7A00' : theme.text, marginBottom: 8, marginLeft: 4 }}>PHONE NUMBER</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {/* Country Code Dropdown Trigger */}
                         <TouchableOpacity 
@@ -213,7 +213,7 @@ export const EditProfileScreen: React.FC = () => {
                                 borderRadius: 16,
                                 padding: 16,
                                 borderWidth: 1.5,
-                                borderColor: showDropdown ? '#02757A' : theme.border,
+                                borderColor: showDropdown ? '#FF7A00' : theme.border,
                                 marginRight: 10,
                                 flexDirection: 'row',
                                 alignItems: 'center',
@@ -234,7 +234,7 @@ export const EditProfileScreen: React.FC = () => {
                                 fontSize: 15,
                                 color: theme.text,
                                 borderWidth: 1.5,
-                                borderColor: focusedField === 'phone' ? '#02757A' : theme.border,
+                                borderColor: focusedField === 'phone' ? '#FF7A00' : theme.border,
                             }}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
@@ -273,7 +273,7 @@ export const EditProfileScreen: React.FC = () => {
                                         alignItems: 'center',
                                         padding: 12,
                                         borderRadius: 10,
-                                        backgroundColor: countryCode === item.code ? '#e0f2f1' : 'transparent'
+                                        backgroundColor: countryCode === item.code ? '#fff5eb' : 'transparent'
                                     }}
                                 >
                                     <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text }}>{item.label} ({item.code})</Text>
@@ -309,13 +309,13 @@ export const EditProfileScreen: React.FC = () => {
                         marginTop: 8,
                         marginBottom: 12,
                         height: 48,
-                        backgroundColor: '#02757A',
+                        backgroundColor: '#FF7A00',
                         borderRadius: 12,
                         paddingHorizontal: 20,
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexDirection: 'row',
-                        shadowColor: '#02757A',
+                        shadowColor: '#FF7A00',
                         shadowOpacity: 0.25,
                         shadowRadius: 8,
                         elevation: 4,
@@ -338,7 +338,7 @@ export const EditProfileScreen: React.FC = () => {
                     onPress={() => navigation.goBack()}
                     style={{ marginTop: 20, alignItems: 'center', padding: 10 }}
                 >
-                    <Text style={{ color: theme.subtext, fontWeight: '600', fontSize: 14 }}>Discard Changes</Text>
+                    <Text style={{ color: '#FF7A00', fontWeight: '600', fontSize: 14 }}>Discard Changes</Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>

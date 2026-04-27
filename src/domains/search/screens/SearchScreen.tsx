@@ -63,7 +63,7 @@ export const SearchScreen: React.FC<Props> = ({ navigation }) => {
                     </Text>
                 ) : isLoading ? (
                     <View style={{ marginTop: 16, alignItems: 'center' }}>
-                        <ActivityIndicator color="#02757A" />
+                        <ActivityIndicator color="#FF7A00" />
                     </View>
                 ) : (
                     <View style={{ marginTop: 16 }}>

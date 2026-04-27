@@ -19,7 +19,7 @@ export const lightColors: ThemeColors = {
     border: '#E5E7EB',
     text: '#111827',
     textMuted: '#6B7280',
-    primary: '#02757A',
+    primary: '#FF7A00',
     tabIconInactive: '#6B7280',
     inputBackground: '#FFFFFF',
 };
@@ -32,7 +32,7 @@ export const darkColors: ThemeColors = {
     border: '#1F2937',
     text: '#F9FAFB',
     textMuted: '#9CA3AF',
-    primary: '#02757A',
+    primary: '#FF7A00',
     tabIconInactive: '#9CA3AF',
     inputBackground: '#111827',
 };

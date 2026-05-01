@@ -13,7 +13,19 @@ const normalizeRestaurant = (item: Restaurant): Restaurant => {
     const name = item.restaurantInfo?.name || item.name;
     const address = item.restaurantInfo?.address || item.address;
     const cuisines = item.restaurantInfo?.cuisines || item.cuisines || [];
-    const images = item.image_urls || item.images || (item.imageUrl ? [item.imageUrl] : []);
+    const imageCandidates = [
+        ...(Array.isArray(item.image_urls) ? item.image_urls : []),
+        ...(Array.isArray(item.images) ? item.images : []),
+        item.imageUrl,
+        (item as any).image,
+        (item as any).image_url,
+        (item as any).coverImage,
+        (item as any).bannerImage,
+    ];
+
+    const images = imageCandidates
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0);
     const latitude = item.latitude ?? item.location?.lat;
     const longitude = item.longitude ?? item.location?.lng;
 

@@ -27,7 +27,18 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 
 const normalizeTiffin = (item: Tiffin): Tiffin => {
     const name = item.kitchenName || item.name;
-    const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
+    const imageCandidates = [
+        ...(Array.isArray(item.images) ? item.images : []),
+        item.imageUrl,
+        (item as any).image,
+        (item as any).image_url,
+        (item as any).coverImage,
+        (item as any).bannerImage,
+    ];
+
+    const images = imageCandidates
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0);
     const serviceDays =
         item.menu && typeof item.menu === 'object' && !Array.isArray(item.menu)
             ? item.menu.serviceDays

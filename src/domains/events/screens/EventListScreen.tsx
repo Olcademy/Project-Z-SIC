@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, useWindowDimensions, ImageBackground } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, useWindowDimensions, ImageBackground, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
 import { useEventsInfinite } from '../hooks/useEvents';
@@ -14,6 +13,7 @@ import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
+import { prefetchImages } from '@/ui/utils/imagePrefetch';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc';
@@ -67,6 +67,7 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isRefetching,
         refetch,
     } = useEventsInfinite();
 
@@ -81,6 +82,16 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
             return true;
         });
     }, [data]);
+
+    useEffect(() => {
+        const urls = allEvents.flatMap((item) => [
+            ...(Array.isArray(item.images) ? item.images : []),
+            item.imageUrl,
+        ]);
+        if (urls.length > 0) {
+            void prefetchImages(urls, 80);
+        }
+    }, [allEvents]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedQuery(query.trim()), 500);
@@ -99,12 +110,6 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
             if (saved.sortBy) setSortBy(saved.sortBy);
         }
     };
-
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
 
     const filteredAndSortedEvents = useMemo(() => {
         const lowerQuery = debouncedQuery.toLowerCase();
@@ -222,6 +227,17 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                 contentContainerStyle={{ paddingBottom: 100 }}
                 onEndReached={() => hasNextPage && fetchNextPage()}
                 ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={{ padding: 20 }} color="#FF7F50" /> : null}
+                initialNumToRender={8}
+                maxToRenderPerBatch={8}
+                windowSize={10}
+                removeClippedSubviews
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefetching}
+                        onRefresh={refetch}
+                        tintColor="#FF7F50"
+                    />
+                }
             />
             
             <FilterBottomSheet

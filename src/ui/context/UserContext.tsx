@@ -120,18 +120,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear any stale-session flag so all authenticated hooks re-enable.
         resetSessionInvalidation();
         setUser(newUser);
-        try {
-            setShouldPersistUser(rememberMe);
-            await AsyncStorage.setItem(REMEMBER_ME_KEY, JSON.stringify(rememberMe));
+        setShouldPersistUser(rememberMe);
 
-            if (rememberMe) {
-                await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
-            } else {
-                // Prevent a stale remembered user from auto-logging in on next cold start.
-                await AsyncStorage.removeItem(USER_STORAGE_KEY);
-            }
-        } catch (error) {
-            console.error('Failed to save user data:', error);
+        void AsyncStorage.setItem(REMEMBER_ME_KEY, JSON.stringify(rememberMe)).catch((error) => {
+            console.error('Failed to save remember-me state:', error);
+        });
+
+        if (rememberMe) {
+            void AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser)).catch((error) => {
+                console.error('Failed to save user data:', error);
+            });
+        } else {
+            // Prevent a stale remembered user from auto-logging in on next cold start.
+            void AsyncStorage.removeItem(USER_STORAGE_KEY).catch((error) => {
+                console.error('Failed to clear user data:', error);
+            });
         }
     }, []);
 

@@ -1,6 +1,5 @@
 import React, { useMemo, useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image, RefreshControl } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TiffinStackParamList } from '@/app/navigation/types';
 import { useTiffinDetail } from '../hooks/useTiffins';
@@ -26,7 +25,7 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const paramItem = route.params.item;
     const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
 
-    const { data: tiffin, isLoading, isError, refetch } = useTiffinDetail(id);
+    const { data: tiffin, isLoading, isError, isRefetching, refetch } = useTiffinDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
@@ -188,12 +187,6 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         return '—';
     }, [days, normalizedTiffin]);
 
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
-
     if (isLoading && !paramItem) {
         return <LoadingSkeletonList count={2} />;
     }
@@ -206,7 +199,16 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefetching}
+                        onRefresh={refetch}
+                        tintColor={PRIMARY}
+                    />
+                }
+            >
                 {/* Top image section */}
                 <View style={{ width: '100%', backgroundColor: colors.surface }}>
                     {images.length > 0 ? (

@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { FlatList, Image, View, NativeScrollEvent, NativeSyntheticEvent, Dimensions, StyleProp, ImageStyle } from 'react-native';
+import { prefetchImages } from '@/ui/utils/imagePrefetch';
 
 type ImageCarouselProps = {
     images: string[];
@@ -38,6 +39,12 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             setIndex(Math.round(offsetX / width));
         }
     }, []);
+
+    useEffect(() => {
+        if (images.length > 1) {
+            void prefetchImages(images, 40);
+        }
+    }, [images]);
 
     if (images.length === 0) {
         return null;

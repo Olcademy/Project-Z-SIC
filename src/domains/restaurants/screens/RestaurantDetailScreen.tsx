@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image, StyleSheet, Pressable } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RestaurantsStackParamList } from '@/app/navigation/types';
 import { useRestaurantDetail } from '../hooks/useRestaurants';
@@ -65,7 +64,7 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
     const paramItem = route.params.item;
     const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
 
-    const { data: restaurant, isLoading, isError, refetch } = useRestaurantDetail(id);
+    const { data: restaurant, isLoading, isError, isRefetching, refetch } = useRestaurantDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const insets = useSafeAreaInsets();
     const normalizedRestaurant = (restaurant ?? paramItem) as RestaurantDetail | undefined;
@@ -105,12 +104,6 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
         const fallback = normalizedRestaurant.imageUrl || (normalizedRestaurant as any).image;
         return fallback ? [String(fallback)] : [];
     }, [normalizedRestaurant]);
-
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
 
     const menuSections = useMemo<RestaurantMenuSection[]>(() => {
         if (!normalizedRestaurant) return [];
@@ -315,6 +308,13 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                 stickyHeaderIndices={[4]}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefetching}
+                        onRefresh={refetch}
+                        tintColor={PRIMARY}
+                    />
+                }
             >
                 {/* HERO */}
                 <View style={styles.heroWrap}>

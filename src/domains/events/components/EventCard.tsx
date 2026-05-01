@@ -78,6 +78,6 @@ export const EventCard = memo<EventCardProps>(({ item, onPress, isGrid }) => {
             </View>
         </TouchableOpacity>
     );
-}, () => false);
+});
 
 EventCard.displayName = 'EventCard';

@@ -1,6 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
 import { useEventDetail } from '../hooks/useEvents';
@@ -19,7 +18,7 @@ export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const paramItem = route.params.item;
     const id = ('id' in route.params ? route.params.id : undefined) ?? paramItem?._id ?? '';
 
-    const { data: event, isLoading, isError, refetch } = useEventDetail(id);
+    const { data: event, isLoading, isError, isRefetching, refetch } = useEventDetail(id);
     const { data: featureFlags } = useFeatureFlags();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
@@ -35,12 +34,6 @@ export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         const fallback = normalizedEvent.imageUrl || (normalizedEvent as any).image;
         return fallback ? [String(fallback)] : [];
     }, [normalizedEvent]);
-
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
 
     const isPastEvent = (dateString?: string) => {
         if (!dateString) return false;
@@ -93,7 +86,16 @@ export const EventDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}>
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefetching}
+                        onRefresh={refetch}
+                        tintColor={colors.primary}
+                    />
+                }
+            >
                 {/* Top image section */}
                 <View style={{ width: '100%', backgroundColor: colors.surface }}>
                     {images.length > 0 ? (

@@ -14,11 +14,18 @@ const normalizeEvent = (item: Event): Event => {
     const date = item.startAt || item.date;
     const venue = item.venue;
 
-    const images = Array.isArray(item.images)
-        ? item.images
-        : item.imageUrl
-        ? [item.imageUrl]
-        : [];
+    const imageCandidates = [
+        ...(Array.isArray(item.images) ? item.images : []),
+        item.imageUrl,
+        (item as any).image,
+        (item as any).image_url,
+        (item as any).bannerImage,
+        (item as any).coverImage,
+    ];
+
+    const images = imageCandidates
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0);
 
     const lat = typeof venue === 'object' ? venue?.lat : undefined;
     const lng = typeof venue === 'object' ? venue?.lng : undefined;

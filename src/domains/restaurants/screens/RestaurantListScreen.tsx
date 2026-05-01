@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RestaurantsStackParamList } from '@/app/navigation/types';
 import { useRestaurantsInfinite } from '../hooks/useRestaurants';
@@ -14,6 +13,7 @@ import { storage } from '@/services/storage/localStorage';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
+import { prefetchImages } from '@/ui/utils/imagePrefetch';
 
 type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantList'>;
 type SortOption = 'default' | 'price-low' | 'price-high' | 'rating' | 'distance';
@@ -48,6 +48,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isRefetching,
         refetch,
     } = useRestaurantsInfinite();
 
@@ -62,6 +63,17 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             return true;
         });
     }, [data]);
+
+    useEffect(() => {
+        const urls = allRestaurants.flatMap((item) => [
+            ...(Array.isArray(item.images) ? item.images : []),
+            ...(Array.isArray(item.image_urls) ? item.image_urls : []),
+            item.imageUrl,
+        ]);
+        if (urls.length > 0) {
+            void prefetchImages(urls, 80);
+        }
+    }, [allRestaurants]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedQuery(query.trim()), 500);
@@ -96,12 +108,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             sortBy,
         });
     };
-
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
 
     const getCuisineTags = (item: Restaurant) => {
         if (Array.isArray(item.cuisineTags)) return item.cuisineTags;
@@ -336,6 +342,13 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     windowSize={10}
                     removeClippedSubviews
                     getItemLayout={getItemLayout}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefetching}
+                            onRefresh={refetch}
+                            tintColor="#FF7A00"
+                        />
+                    }
                     ListEmptyComponent={
                         <EmptyState
                             title="No restaurants found"

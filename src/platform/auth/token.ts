@@ -22,16 +22,16 @@ export const setUserAuthToken = async (token?: string | null, options?: { persis
 
     if (!shouldPersist) {
         // Avoid stale token on next cold start.
-        await SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY);
+        void SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY).catch(() => {});
         return;
     }
 
     if (trimmed.length === 0) {
-        await SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY);
+        void SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY).catch(() => {});
         return;
     }
 
-    await SecureStore.setItemAsync(USER_AUTH_TOKEN_KEY, trimmed);
+    void SecureStore.setItemAsync(USER_AUTH_TOKEN_KEY, trimmed).catch(() => {});
 };
 
 export const hydrateUserAuthToken = async () => {
@@ -47,5 +47,5 @@ export const hydrateUserAuthToken = async () => {
 
 export const clearUserAuthToken = async () => {
     applyApiAuthToken(null);
-    await SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY);
+    void SecureStore.deleteItemAsync(USER_AUTH_TOKEN_KEY).catch(() => {});
 };

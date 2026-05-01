@@ -86,6 +86,6 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
             </View>
         </TouchableOpacity>
     );
-}, () => false);
+});
 
 TiffinCard.displayName = 'TiffinCard';

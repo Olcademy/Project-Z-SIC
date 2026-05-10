@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Restaurant, RestaurantDetail } from '@/domains/restaurants/types';
 import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
@@ -6,6 +6,7 @@ import { storage } from '@/services/storage/localStorage';
 import { useUser } from '@/ui/context/UserContext';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
+const LOCAL_FAVORITES_KEY = ['local-restaurant-favorites'] as const;
 
 type TakeawayListParams = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -204,6 +205,44 @@ export const useTakeawayFavoriteStatus = (id: string, options?: { enabled?: bool
         retry: 0,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
+    });
+};
+
+export const useLocalRestaurantFavorites = () => {
+    return useQuery({
+        queryKey: LOCAL_FAVORITES_KEY,
+        queryFn: async () => {
+            return storage.getFavoriteRestaurantIds();
+        },
+        staleTime: Infinity,
+    });
+};
+
+export const useToggleLocalRestaurantFavorite = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            return storage.toggleFavoriteRestaurantId(id);
+        },
+        onMutate: async (id: string) => {
+            await queryClient.cancelQueries({ queryKey: LOCAL_FAVORITES_KEY });
+            const prev = queryClient.getQueryData<string[]>(LOCAL_FAVORITES_KEY) ?? [];
+            const set = new Set(prev);
+            if (set.has(id)) set.delete(id);
+            else set.add(id);
+            const next = Array.from(set);
+            queryClient.setQueryData<string[]>(LOCAL_FAVORITES_KEY, next);
+            return { prev };
+        },
+        onError: (_err, _id, ctx) => {
+            if (ctx?.prev) {
+                queryClient.setQueryData<string[]>(LOCAL_FAVORITES_KEY, ctx.prev);
+            }
+        },
+        onSuccess: (result) => {
+            queryClient.setQueryData<string[]>(LOCAL_FAVORITES_KEY, result.ids);
+        },
     });
 };
 

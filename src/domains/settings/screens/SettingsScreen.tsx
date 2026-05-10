@@ -149,9 +149,9 @@ export const SettingsScreen: React.FC = () => {
                 {/* Support Section */}
                 <View style={[cardStyle, { paddingBottom: 6 }]}>
                     <CardTitle title="Help & Support" />
-                    <SettingItem icon="help-circle-outline" label="FAQ" iconBg="#FFF5F0" />
-                    <SettingItem icon="mail-outline" label="Contact Support" iconBg="#FFF5F0" />
-                    <SettingItem icon="document-text-outline" label="Privacy Policy" iconBg="#FFF5F0" hasBorder={false} />
+                    <SettingItem icon="help-circle-outline" label="FAQ" value="Find answers to common questions" iconBg="#FFF5F0" onPress={() => navigation.navigate('FAQ')} />
+                    <SettingItem icon="mail-outline" label="Contact Support" value="Get help with orders, payments, or account" iconBg="#FFF5F0" onPress={() => navigation.navigate('ContactSupport')} />
+                    <SettingItem icon="document-text-outline" label="Privacy Policy" value="Learn how your data is used and protected" iconBg="#FFF5F0" hasBorder={false} onPress={() => navigation.navigate('PrivacyPolicy')} />
                 </View>
 
                 {/* Logout Button */}

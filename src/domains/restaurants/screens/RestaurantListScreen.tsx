@@ -137,6 +137,25 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         return 0;
     };
 
+    const getDistanceValueKm = (item: Restaurant) => {
+        const anyItem = item as any;
+        const candidates = [
+            anyItem.distanceKm,
+            anyItem.distance_km,
+            anyItem.distance,
+            anyItem.restaurantInfo?.distance,
+            anyItem.location?.distance,
+        ];
+        for (const c of candidates) {
+            if (typeof c === 'number' && Number.isFinite(c)) return c;
+            if (typeof c === 'string') {
+                const parsed = Number(c);
+                if (Number.isFinite(parsed)) return parsed;
+            }
+        }
+        return null;
+    };
+
     const hasAnyOffer = (item: Restaurant) => {
         if (item.hasOffer) return true;
         if (item.offer) return true;
@@ -169,8 +188,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (selectedCuisine && !cuisines.includes(selectedCuisine)) return false;
             if (vegOnly && !isVegRestaurant(item)) return false;
-            if (topRated && Number(item.rating ?? 0) < 4.0) return false;
-            if (hasOffers && !item.hasOffer && !item.offer) return false;
+            if (topRated && getRatingValue(item) < 4.0) return false;
+            if (hasOffers && !hasAnyOffer(item)) return false;
             return true;
         });
 
@@ -185,6 +204,17 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                 const priceA = getPriceValue(a) ?? 0;
                 const priceB = getPriceValue(b) ?? 0;
                 return priceB - priceA;
+            });
+        } else if (sortBy === 'rating') {
+            filtered = filtered.sort((a, b) => getRatingValue(b) - getRatingValue(a));
+        } else if (sortBy === 'distance') {
+            filtered = filtered.sort((a, b) => {
+                const distA = getDistanceValueKm(a);
+                const distB = getDistanceValueKm(b);
+                if (distA === null && distB === null) return 0;
+                if (distA === null) return 1;
+                if (distB === null) return -1;
+                return distA - distB;
             });
         }
 
@@ -271,6 +301,26 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         onSelect: (v) => setSortBy(v as SortOption),
                     },
                     {
+                        title: 'Features',
+                        options: [
+                            { value: 'veg', label: 'Veg Only' },
+                            { value: 'topRated', label: 'Rating 4.0+' },
+                            { value: 'offers', label: 'Offers' },
+                        ],
+                        multi: true,
+                        selected: [
+                            ...(vegOnly ? ['veg'] : []),
+                            ...(topRated ? ['topRated'] : []),
+                            ...(hasOffers ? ['offers'] : []),
+                        ],
+                        onSelect: (v) => {
+                            const next = Array.isArray(v) ? v : [];
+                            setVegOnly(next.includes('veg'));
+                            setTopRated(next.includes('topRated'));
+                            setHasOffers(next.includes('offers'));
+                        },
+                    },
+                    {
                         title: 'Diet',
                         options: [{ value: 'veg', label: 'Veg Only' }],
                         selected: vegOnly ? 'veg' : null,
@@ -280,7 +330,19 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         title: 'Cuisine',
                         options: cuisineOptions.map(c => ({ value: c, label: c })),
                         selected: selectedCuisine,
-                        onSelect: (v) => setSelectedCuisine(selectedCuisine === v ? null : v),
+                        onSelect: (v) => {
+                            const cuisine = v as string;
+                            setSelectedCuisine(selectedCuisine === cuisine ? null : cuisine);
+                        },
+                    },
+                    {
+                        title: 'Favourites',
+                        options: [{ value: 'open', label: 'View favourites' }],
+                        selected: null,
+                        onSelect: () => {
+                            setShowFilters(false);
+                            navigation.navigate('FavoriteRestaurants');
+                        },
                     },
                 ]}
             />
@@ -316,6 +378,14 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                     >
                         <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Pure Veg</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('FavoriteRestaurants')}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Ionicons name="heart" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Favourites</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </View>

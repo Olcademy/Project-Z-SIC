@@ -7,6 +7,8 @@ const KEYS = {
     RECENT_SEARCHES: '@sic:recentSearches',
     FEATURE_FLAGS: '@sic:featureFlags',
     CACHE: '@sic:cache',
+    FAVORITE_RESTAURANTS: '@sic:favorites:restaurants',
+    FAVORITE_TIFFINS: '@sic:favorites:tiffins',
 };
 
 type CachePayload<T> = {
@@ -152,6 +154,75 @@ export const storage = {
             console.error('Error getting cache:', error);
             return null;
         }
+    },
+
+    // Local favourites
+    async getFavoriteRestaurantIds(): Promise<string[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_RESTAURANTS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((v) => String(v)).filter(Boolean);
+        } catch (error) {
+            console.error('Error getting favorite restaurants:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteRestaurantIds(ids: string[]) {
+        try {
+            const unique = Array.from(new Set(ids.map((v) => String(v)).filter(Boolean)));
+            await AsyncStorage.setItem(KEYS.FAVORITE_RESTAURANTS, JSON.stringify(unique));
+        } catch (error) {
+            console.error('Error saving favorite restaurants:', error);
+        }
+    },
+
+    async toggleFavoriteRestaurantId(id: string): Promise<{ ids: string[]; isFavorited: boolean }> {
+        const safeId = String(id || '').trim();
+        if (!safeId) return { ids: await this.getFavoriteRestaurantIds(), isFavorited: false };
+
+        const current = await this.getFavoriteRestaurantIds();
+        const set = new Set(current);
+        if (set.has(safeId)) set.delete(safeId);
+        else set.add(safeId);
+        const next = Array.from(set);
+        await this.setFavoriteRestaurantIds(next);
+        return { ids: next, isFavorited: set.has(safeId) };
+    },
+
+    async getFavoriteTiffinIds(): Promise<string[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_TIFFINS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((v) => String(v)).filter(Boolean);
+        } catch (error) {
+            console.error('Error getting favorite tiffins:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteTiffinIds(ids: string[]) {
+        try {
+            const unique = Array.from(new Set(ids.map((v) => String(v)).filter(Boolean)));
+            await AsyncStorage.setItem(KEYS.FAVORITE_TIFFINS, JSON.stringify(unique));
+        } catch (error) {
+            console.error('Error saving favorite tiffins:', error);
+        }
+    },
+
+    async toggleFavoriteTiffinId(id: string): Promise<{ ids: string[]; isFavorited: boolean }> {
+        const safeId = String(id || '').trim();
+        if (!safeId) return { ids: await this.getFavoriteTiffinIds(), isFavorited: false };
+
+        const current = await this.getFavoriteTiffinIds();
+        const set = new Set(current);
+        if (set.has(safeId)) set.delete(safeId);
+        else set.add(safeId);
+        const next = Array.from(set);
+        await this.setFavoriteTiffinIds(next);
+        return { ids: next, isFavorited: set.has(safeId) };
     },
 
     // General utility

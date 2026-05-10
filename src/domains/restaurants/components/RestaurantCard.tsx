@@ -1,9 +1,9 @@
-import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, FlatList, useWindowDimensions } from 'react-native';
+import React, { memo, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, FlatList, useWindowDimensions, Platform, ToastAndroid, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Restaurant } from '@/domains/restaurants/types';
 import { useTheme } from '@/ui/context/ThemeContext';
-import { useTakeawayFavoriteStatus, useAddTakeawayFavorite, useRemoveTakeawayFavorite } from '../hooks/useRestaurants';
+import { useLocalRestaurantFavorites, useToggleLocalRestaurantFavorite } from '../hooks/useRestaurants';
 import { useUser } from '@/ui/context/UserContext';
 
 interface RestaurantCardProps {
@@ -20,23 +20,26 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
 
     const isGuest = !user || user.isGuest;
 
-    const { data: favoriteStatus, refetch: refetchFavorite } = useTakeawayFavoriteStatus(item._id, { enabled: !isGuest });
-    const addFavoriteMutation = useAddTakeawayFavorite();
-    const removeFavoriteMutation = useRemoveTakeawayFavorite();
+    const { data: localFavorites } = useLocalRestaurantFavorites();
+    const toggleLocalFavorite = useToggleLocalRestaurantFavorite();
 
-    const isFavorited = !!favoriteStatus && !isGuest;
+    const isFavorited = useMemo(() => {
+        const ids = localFavorites ?? [];
+        return ids.includes(item._id);
+    }, [localFavorites, item._id]);
+
+    const isMutating = toggleLocalFavorite.isPending;
 
     const handleToggleFavorite = async () => {
-        if (isGuest) return;
-        try {
-            if (isFavorited) {
-                await removeFavoriteMutation.mutateAsync(item._id);
-            } else {
-                await addFavoriteMutation.mutateAsync(item._id);
-            }
-            refetchFavorite();
-        } catch (error) {
-            console.error('Failed to toggle favorite:', error);
+        // Always update locally first (works for guest and offline).
+        const prev = isFavorited;
+        await toggleLocalFavorite.mutateAsync(item._id);
+
+        const message = prev ? 'Removed from favourites' : 'Added to favourites';
+        if (Platform.OS === 'android') {
+            ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+            Alert.alert('Favourites', message);
         }
     };
 
@@ -119,13 +122,6 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                             }} />
                         </View>
 
-                        <TouchableOpacity 
-                            onPress={handleToggleFavorite}
-                            style={{ position: 'absolute', top: 12, right: 12, backgroundColor: '#FFFFFF', borderRadius: 15, width: 30, height: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }}
-                        >
-                            <Ionicons name={isFavorited ? "heart" : "heart-outline"} size={18} color="#FF4D4D" />
-                        </TouchableOpacity>
-
                         <View style={{ position: 'absolute', bottom: 12, right: 12, flexDirection: 'row', gap: 4 }}>
                             {images.slice(0, 4).map((_, i) => (
                                 <View 
@@ -144,6 +140,14 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                         <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 8 }}>No image available</Text>
                     </View>
                 )}
+
+                <TouchableOpacity
+                    onPress={handleToggleFavorite}
+                    disabled={isMutating}
+                    style={{ position: 'absolute', top: 12, right: 12, backgroundColor: '#FFFFFF', borderRadius: 15, width: 30, height: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }}
+                >
+                    <Ionicons name={isFavorited ? "heart" : "heart-outline"} size={18} color="#FF4D4D" />
+                </TouchableOpacity>
             </View>
 
             <View style={{ padding: 16 }}>

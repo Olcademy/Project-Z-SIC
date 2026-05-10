@@ -72,6 +72,15 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         loadFilters();
     }, []);
 
+    useEffect(() => {
+        void storage.saveFilters('tiffins', {
+            vegOnly,
+            topRated,
+            hasOffers,
+            sortBy,
+        });
+    }, [vegOnly, topRated, hasOffers, sortBy]);
+
     const loadFilters = async () => {
         const saved = await storage.getFilters('tiffins');
         if (saved) {
@@ -88,14 +97,34 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         return null;
     };
 
+    const getRatingValue = (item: Tiffin) => {
+        const raw = item.rating;
+        if (typeof raw === 'number') return raw;
+        if (typeof raw === 'string') {
+            const parsed = Number(raw);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    };
+
+    const hasAnyOffer = (item: Tiffin) => {
+        if (item.hasOffer) return true;
+        if (item.offer) return true;
+        const anyItem = item as any;
+        if (Array.isArray(anyItem.badges)) {
+            return anyItem.badges.some((b: unknown) => String(b).toLowerCase().includes('offer'));
+        }
+        return false;
+    };
+
     const filteredAndSortedTiffins = useMemo(() => {
         const lowerQuery = debouncedQuery.toLowerCase();
         let filtered = allTiffins.filter((item) => {
             const searchable = [item.name, item.shortDescription].filter(Boolean).join(' ').toLowerCase();
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (vegOnly && !item.vegOnly) return false;
-            if (topRated && (item.rating ?? 0) < 4.0) return false;
-            if (hasOffers && !item.hasOffer && !item.offer) return false;
+            if (topRated && getRatingValue(item) < 4.0) return false;
+            if (hasOffers && !hasAnyOffer(item)) return false;
             return true;
         });
 
@@ -103,6 +132,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             filtered = filtered.sort((a, b) => (getPriceValue(a) ?? Infinity) - (getPriceValue(b) ?? Infinity));
         } else if (sortBy === 'price-high') {
             filtered = filtered.sort((a, b) => (getPriceValue(b) ?? 0) - (getPriceValue(a) ?? 0));
+        } else if (sortBy === 'veg-first') {
+            filtered = filtered.sort((a, b) => Number(!!b.vegOnly) - Number(!!a.vegOnly));
         }
 
         return filtered;
@@ -153,6 +184,14 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                     style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: hasOffers ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                 >
                     <Text style={{ fontSize: 13, fontWeight: '600', color: hasOffers ? '#FFF' : '#FF7F50' }}>Offers</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('FavoriteTiffins')}
+                    style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                >
+                    <Ionicons name="heart" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Favourites</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -234,6 +273,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             <FilterBottomSheet
                 visible={showFilters}
                 onClose={() => setShowFilters(false)}
+                onClear={() => { setVegOnly(false); setTopRated(false); setHasOffers(false); setSortBy('default'); }}
                 accentColor="#FF7F50"
                 sections={[
                     {
@@ -242,10 +282,40 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                             { value: 'default', label: 'Default' },
                             { value: 'price-low', label: 'Price: Low to High' },
                             { value: 'price-high', label: 'Price: High to Low' },
+                            { value: 'veg-first', label: 'Veg first' },
                         ],
                         selected: sortBy,
                         onSelect: (v) => setSortBy(v as SortOption),
-                    }
+                    },
+                    {
+                        title: 'Features',
+                        options: [
+                            { value: 'veg', label: 'Veg Only' },
+                            { value: 'topRated', label: 'Rating 4.0+' },
+                            { value: 'offers', label: 'Offers' },
+                        ],
+                        multi: true,
+                        selected: [
+                            ...(vegOnly ? ['veg'] : []),
+                            ...(topRated ? ['topRated'] : []),
+                            ...(hasOffers ? ['offers'] : []),
+                        ],
+                        onSelect: (v) => {
+                            const next = Array.isArray(v) ? v : [];
+                            setVegOnly(next.includes('veg'));
+                            setTopRated(next.includes('topRated'));
+                            setHasOffers(next.includes('offers'));
+                        },
+                    },
+                    {
+                        title: 'Favourites',
+                        options: [{ value: 'open', label: 'View favourites' }],
+                        selected: null,
+                        onSelect: () => {
+                            setShowFilters(false);
+                            navigation.navigate('FavoriteTiffins');
+                        },
+                    },
                 ]}
             />
         </View>

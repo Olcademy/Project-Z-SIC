@@ -102,6 +102,14 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         loadFilters();
     }, []);
 
+    useEffect(() => {
+        void storage.saveFilters('events', {
+            categoryFilter,
+            dateFilter,
+            sortBy,
+        });
+    }, [categoryFilter, dateFilter, sortBy]);
+
     const loadFilters = async () => {
         const saved = await storage.getFilters('events');
         if (saved) {
@@ -111,14 +119,53 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
+    const getEventDateMs = (item: Event) => {
+        const candidate = item.startAt || item.date;
+        if (!candidate) return null;
+        const ms = new Date(candidate).getTime();
+        return Number.isFinite(ms) ? ms : null;
+    };
+
+    const categoryOptions = useMemo(() => {
+        const set = new Set<string>();
+        allEvents.forEach((e) => {
+            if (e.category) set.add(e.category);
+        });
+        const categories = Array.from(set).filter(Boolean);
+        if (categories.length === 0) return [{ value: 'Music', label: 'Music' }, { value: 'Tech', label: 'Tech' }];
+        return categories.slice(0, 12).map((c) => ({ value: c, label: c }));
+    }, [allEvents]);
+
     const filteredAndSortedEvents = useMemo(() => {
         const lowerQuery = debouncedQuery.toLowerCase();
+        const now = Date.now();
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
         let filtered = allEvents.filter((item) => {
             const title = (item.name || item.title || '').toLowerCase();
             if (lowerQuery && !title.includes(lowerQuery)) return false;
             if (categoryFilter && item.category !== categoryFilter) return false;
+            if (dateFilter) {
+                const dateMs = getEventDateMs(item);
+                if (dateMs === null) return false;
+                if (dateFilter === 'upcoming' && dateMs < now) return false;
+                if (dateFilter === 'past' && dateMs >= now) return false;
+                if (dateFilter === 'week' && (dateMs < now || dateMs > now + weekMs)) return false;
+            }
             return true;
         });
+
+        if (sortBy === 'date-asc' || sortBy === 'date-desc') {
+            const direction = sortBy === 'date-asc' ? 1 : -1;
+            filtered = filtered.sort((a, b) => {
+                const msA = getEventDateMs(a);
+                const msB = getEventDateMs(b);
+                if (msA === null && msB === null) return 0;
+                if (msA === null) return 1;
+                if (msB === null) return -1;
+                return direction * (msA - msB);
+            });
+        }
+
         return filtered;
     }, [allEvents, debouncedQuery, categoryFilter, dateFilter, sortBy]);
 
@@ -248,9 +295,29 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                 sections={[
                     {
                         title: 'Category',
-                        options: [{ value: 'Music', label: 'Music' }, { value: 'Tech', label: 'Tech' }],
+                        options: categoryOptions,
                         selected: categoryFilter,
-                        onSelect: (v) => setCategoryFilter(v as string),
+                        onSelect: (v) => setCategoryFilter(v === categoryFilter ? null : (v as string)),
+                    },
+                    {
+                        title: 'Date',
+                        options: [
+                            { value: 'upcoming', label: 'Upcoming' },
+                            { value: 'week', label: 'This week' },
+                            { value: 'past', label: 'Past' },
+                        ],
+                        selected: dateFilter,
+                        onSelect: (v) => setDateFilter(v === dateFilter ? null : (v as any)),
+                    },
+                    {
+                        title: 'Sort by',
+                        options: [
+                            { value: 'default', label: 'Default' },
+                            { value: 'date-asc', label: 'Date: Soonest first' },
+                            { value: 'date-desc', label: 'Date: Latest first' },
+                        ],
+                        selected: sortBy,
+                        onSelect: (v) => setSortBy(v as SortOption),
                     }
                 ]}
             />

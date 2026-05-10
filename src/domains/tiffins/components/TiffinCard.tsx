@@ -1,8 +1,9 @@
-import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
+import React, { memo, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, Platform, ToastAndroid, Alert } from 'react-native';
 import { Tiffin } from '@/domains/tiffins/types';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalTiffinFavorites, useToggleLocalTiffinFavorite } from '@/domains/tiffins/hooks/useTiffins';
 
 interface TiffinCardProps {
     item: Tiffin;
@@ -11,6 +12,12 @@ interface TiffinCardProps {
 
 export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
     const theme = useTheme();
+    const { data: localFavorites } = useLocalTiffinFavorites();
+    const toggleFavorite = useToggleLocalTiffinFavorite();
+
+    const isFavorited = useMemo(() => {
+        return (localFavorites ?? []).includes(item._id);
+    }, [localFavorites, item._id]);
 
     const getPriceValue = (item: Tiffin) => {
         if (typeof item.pricePerMeal === 'number') return item.pricePerMeal;
@@ -51,8 +58,21 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
                                 <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>🌿 VEG ONLY</Text>
                             </View>
                         )}
-                        <TouchableOpacity style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' }}>
-                            <Ionicons name="heart-outline" size={18} color="#FFF" />
+                        <TouchableOpacity
+                            onPress={() => {
+                                const prev = isFavorited;
+                                toggleFavorite.mutate(item._id);
+                                const message = prev ? 'Removed from favourites' : 'Added to favourites';
+                                if (Platform.OS === 'android') {
+                                    ToastAndroid.show(message, ToastAndroid.SHORT);
+                                } else {
+                                    Alert.alert('Favourites', message);
+                                }
+                            }}
+                            disabled={toggleFavorite.isPending}
+                            style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            <Ionicons name={isFavorited ? 'heart' : 'heart-outline'} size={18} color="#FFF" />
                         </TouchableOpacity>
                     </View>
                     

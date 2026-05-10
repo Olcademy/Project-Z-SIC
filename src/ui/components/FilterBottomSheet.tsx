@@ -10,8 +10,8 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 export type FilterSection = {
     title: string;
     options: { label: string; value: string }[];
-    selected: string | null | boolean;
-    onSelect: (value: string) => void;
+    selected: string | string[] | null;
+    onSelect: (value: string | string[]) => void;
     multi?: boolean;
 };
 
@@ -46,8 +46,10 @@ export const FilterBottomSheet: React.FC<Props> = ({
     }, [visible]);
 
     const activeCount = sections.reduce((acc, s) => {
-        if (s.selected === true || (s.selected !== null && s.selected !== 'default' && s.selected !== false)) return acc + 1;
-        return acc;
+        if (Array.isArray(s.selected)) return s.selected.length > 0 ? acc + 1 : acc;
+        if (s.selected === null) return acc;
+        if (s.selected === 'default') return acc;
+        return acc + 1;
     }, 0);
 
     return (
@@ -84,12 +86,23 @@ export const FilterBottomSheet: React.FC<Props> = ({
                             </Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                                 {section.options.map((opt) => {
-                                    const isActive = section.selected === opt.value ||
-                                        (opt.value === 'veg' && section.selected === true);
+                                    const isActive = Array.isArray(section.selected)
+                                        ? section.selected.includes(opt.value)
+                                        : section.selected === opt.value;
                                     return (
                                         <TouchableOpacity
                                             key={opt.value}
-                                            onPress={() => section.onSelect(opt.value)}
+                                            onPress={() => {
+                                                if (section.multi) {
+                                                    const current = Array.isArray(section.selected) ? section.selected : [];
+                                                    const next = current.includes(opt.value)
+                                                        ? current.filter((v) => v !== opt.value)
+                                                        : [...current, opt.value];
+                                                    section.onSelect(next);
+                                                } else {
+                                                    section.onSelect(opt.value);
+                                                }
+                                            }}
                                             style={{
                                                 borderRadius: 20, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 8,
                                                 backgroundColor: isActive ? accentColor : theme.chipBg,

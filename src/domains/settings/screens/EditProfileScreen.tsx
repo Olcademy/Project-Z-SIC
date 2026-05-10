@@ -46,7 +46,7 @@ export const EditProfileScreen: React.FC = () => {
     if (loading) {
         return (
             <View style={{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={theme.primary} />
+                <ActivityIndicator size="large" color={theme.chipText} />
             </View>
         );
     }

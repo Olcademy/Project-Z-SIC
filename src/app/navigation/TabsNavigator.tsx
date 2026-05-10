@@ -5,10 +5,15 @@ import { EventDetailScreen } from '@/domains/events/screens/EventDetailScreen';
 import { EventListScreen } from '@/domains/events/screens/EventListScreen';
 import { RestaurantDetailScreen } from '@/domains/restaurants/screens/RestaurantDetailScreen';
 import { RestaurantListScreen } from '@/domains/restaurants/screens/RestaurantListScreen';
+import { FavoriteRestaurantsScreen } from '@/domains/restaurants/screens/FavoriteRestaurantsScreen';
 import { SettingsScreen } from '@/domains/settings/screens/SettingsScreen';
 import { TiffinDetailScreen } from '@/domains/tiffins/screens/TiffinDetailScreen';
 import { TiffinListScreen } from '@/domains/tiffins/screens/TiffinListScreen';
+import { FavoriteTiffinsScreen } from '@/domains/tiffins/screens/FavoriteTiffinsScreen';
 import { EditProfileScreen } from '@/domains/settings/screens/EditProfileScreen';
+import { FaqScreen } from '@/domains/settings/screens/FaqScreen';
+import { ContactSupportScreen } from '@/domains/settings/screens/ContactSupportScreen';
+import { PrivacyPolicyScreen } from '@/domains/settings/screens/PrivacyPolicyScreen';
 import { Ionicons } from '@expo/vector-icons';
 import type {
     EventsStackParamList,
@@ -30,6 +35,7 @@ const TIFFIN_ACTIVE_ICON = '#FF7A00';
 const RestaurantsStackNavigator = () => (
     <RestaurantsStack.Navigator screenOptions={{ headerShown: false }}>
         <RestaurantsStack.Screen name="RestaurantList" component={RestaurantListScreen} />
+        <RestaurantsStack.Screen name="FavoriteRestaurants" component={FavoriteRestaurantsScreen} />
         <RestaurantsStack.Screen name="RestaurantDetail" component={RestaurantDetailScreen} />
     </RestaurantsStack.Navigator>
 );
@@ -37,6 +43,7 @@ const RestaurantsStackNavigator = () => (
 const TiffinStackNavigator = () => (
     <TiffinStack.Navigator screenOptions={{ headerShown: false }}>
         <TiffinStack.Screen name="TiffinList" component={TiffinListScreen} />
+        <TiffinStack.Screen name="FavoriteTiffins" component={FavoriteTiffinsScreen} />
         <TiffinStack.Screen name="TiffinDetail" component={TiffinDetailScreen} />
     </TiffinStack.Navigator>
 );
@@ -52,6 +59,9 @@ const SettingsStackNavigator = () => (
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
         <SettingsStack.Screen name="Settings" component={SettingsScreen} />
         <SettingsStack.Screen name="EditProfile" component={EditProfileScreen} />
+        <SettingsStack.Screen name="FAQ" component={FaqScreen} />
+        <SettingsStack.Screen name="ContactSupport" component={ContactSupportScreen} />
+        <SettingsStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </SettingsStack.Navigator>
 );
 

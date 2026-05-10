@@ -6,11 +6,13 @@ import type { Event } from '@/domains/events/types';
 export type RestaurantsStackParamList = {
     RestaurantList: undefined;
     RestaurantDetail: { item: Restaurant } | { id: string; item?: Restaurant };
+    FavoriteRestaurants: undefined;
 };
 
 export type TiffinStackParamList = {
     TiffinList: undefined;
     TiffinDetail: { item: Tiffin } | { id: string; item?: Tiffin };
+    FavoriteTiffins: undefined;
 };
 
 export type EventsStackParamList = {
@@ -21,6 +23,9 @@ export type EventsStackParamList = {
 export type SettingsStackParamList = {
     Settings: undefined;
     EditProfile: undefined;
+    FAQ: undefined;
+    ContactSupport: undefined;
+    PrivacyPolicy: undefined;
 };
 
 export type MainTabsParamList = {

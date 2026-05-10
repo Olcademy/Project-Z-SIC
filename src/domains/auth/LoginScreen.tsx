@@ -8,6 +8,7 @@ import { ErrorState } from '@/ui/components/ErrorState';
 import { useAppSelector } from '@/hooks/useAppStore';
 import { useUser } from '@/ui/context/UserContext';
 import { setUserAuthToken } from '@/platform/auth/token';
+import { FontAwesome } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -303,19 +304,28 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                                 className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full mr-3"
                                 onPress={() => launchOAuthFlow('google')}
                             >
-                                <Text className="text-sm text-gray-700 dark:text-slate-200">Google</Text>
+                                <View className="flex-row items-center">
+                                    <FontAwesome name="google" size={14} color={isDark ? '#E2E8F0' : '#374151'} />
+                                    <Text className="text-sm text-gray-700 dark:text-slate-200 ml-2">Google</Text>
+                                </View>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full mr-3"
                                 onPress={() => launchOAuthFlow('facebook')}
                             >
-                                <Text className="text-sm text-gray-700 dark:text-slate-200">Facebook</Text>
+                                <View className="flex-row items-center">
+                                    <FontAwesome name="facebook" size={14} color={isDark ? '#E2E8F0' : '#374151'} />
+                                    <Text className="text-sm text-gray-700 dark:text-slate-200 ml-2">Facebook</Text>
+                                </View>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 className="border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full"
                                 onPress={() => launchOAuthFlow('twitter')}
                             >
-                                <Text className="text-sm text-gray-700 dark:text-slate-200">Twitter</Text>
+                                <View className="flex-row items-center">
+                                    <FontAwesome name="twitter" size={14} color={isDark ? '#E2E8F0' : '#374151'} />
+                                    <Text className="text-sm text-gray-700 dark:text-slate-200 ml-2">Twitter</Text>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     </View>

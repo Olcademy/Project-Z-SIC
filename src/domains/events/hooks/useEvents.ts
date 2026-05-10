@@ -1,10 +1,12 @@
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Event } from '@/domains/events/types';
 import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
+const LOCAL_EVENT_FAVORITES_KEY = ['local-event-favorites'] as const;
+const LOCAL_EVENT_FAVORITE_ITEMS_KEY = ['local-event-favorite-items'] as const;
 
 type EventListParams = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -58,7 +60,7 @@ export const useEvents = (params?: EventListParams) => {
                 return normalized;
             } catch (error) {
                 const cached = await storage.getCache<Event[]>('events:list', LIST_CACHE_TTL);
-                return cached ?? [];
+                return (cached ?? []).map((item) => normalizeEvent(item as Event & Record<string, unknown>));
             }
         },
     });
@@ -88,7 +90,7 @@ export const useEventsInfinite = (params?: EventListParams) => {
                 if (pageParam === 1) {
                     const cached = await storage.getCache<Event[]>('events:list', LIST_CACHE_TTL);
                     if (cached) {
-                        return { items: cached, nextPage: undefined };
+                        return { items: cached.map((item) => normalizeEvent(item as Event & Record<string, unknown>)), nextPage: undefined };
                     }
                 }
                 return { items: [], nextPage: undefined };
@@ -96,6 +98,46 @@ export const useEventsInfinite = (params?: EventListParams) => {
         },
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: 1,
+    });
+};
+
+export const useLocalEventFavorites = () => {
+    return useQuery({
+        queryKey: LOCAL_EVENT_FAVORITES_KEY,
+        queryFn: async () => storage.getFavoriteEventIds(),
+        staleTime: Infinity,
+    });
+};
+
+export const useLocalEventFavoriteItems = () => {
+    return useQuery({
+        queryKey: LOCAL_EVENT_FAVORITE_ITEMS_KEY,
+        queryFn: async () => storage.getFavoriteEventItems<Event>(),
+        staleTime: Infinity,
+    });
+};
+
+export const useToggleLocalEventFavorite = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => storage.toggleFavoriteEventId(id),
+        onMutate: async (id: string) => {
+            await queryClient.cancelQueries({ queryKey: LOCAL_EVENT_FAVORITES_KEY });
+            const prev = queryClient.getQueryData<string[]>(LOCAL_EVENT_FAVORITES_KEY) ?? [];
+            const set = new Set(prev);
+            if (set.has(id)) set.delete(id);
+            else set.add(id);
+            const next = Array.from(set);
+            queryClient.setQueryData<string[]>(LOCAL_EVENT_FAVORITES_KEY, next);
+            return { prev };
+        },
+        onError: (_err, _id, ctx) => {
+            if (ctx?.prev) queryClient.setQueryData<string[]>(LOCAL_EVENT_FAVORITES_KEY, ctx.prev);
+        },
+        onSuccess: (result) => {
+            queryClient.setQueryData<string[]>(LOCAL_EVENT_FAVORITES_KEY, result.ids);
+        },
     });
 };
 

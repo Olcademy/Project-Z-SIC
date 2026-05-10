@@ -1,8 +1,11 @@
-import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, useWindowDimensions } from 'react-native';
+import React, { memo, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, useWindowDimensions, Platform, ToastAndroid, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event } from '@/domains/events/types';
 import { useTheme } from '@/ui/context/ThemeContext';
+import { useLocalEventFavorites, useToggleLocalEventFavorite } from '@/domains/events/hooks/useEvents';
+import { storage } from '@/services/storage/localStorage';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EventCardProps {
     item: Event;
@@ -14,6 +17,14 @@ export const EventCard = memo<EventCardProps>(({ item, onPress, isGrid }) => {
     const theme = useTheme();
     const { width: screenWidth } = useWindowDimensions();
     const gridItemWidth = (screenWidth - 56) / 2; // (Screen - horizontal padding - gap) / 2
+
+    const { data: favoriteIds } = useLocalEventFavorites();
+    const toggleFavorite = useToggleLocalEventFavorite();
+    const queryClient = useQueryClient();
+
+    const isFavorited = useMemo(() => {
+        return (favoriteIds ?? []).includes(item._id);
+    }, [favoriteIds, item._id]);
 
     const formatVenue = (venue?: Event['venue']) => {
         if (!venue) return '';
@@ -54,13 +65,31 @@ export const EventCard = memo<EventCardProps>(({ item, onPress, isGrid }) => {
                     resizeMode="cover"
                 >
                     <TouchableOpacity 
+                        onPress={async () => {
+                            const prev = isFavorited;
+                            const result = await toggleFavorite.mutateAsync(item._id);
+                            if (result.isFavorited) {
+                                await storage.upsertFavoriteEventItem(item);
+                            } else {
+                                await storage.removeFavoriteEventItem(item._id);
+                            }
+                            queryClient.invalidateQueries({ queryKey: ['local-event-favorite-items'] });
+
+                            const message = prev ? 'Removed from favourites' : 'Added to favourites';
+                            if (Platform.OS === 'android') {
+                                ToastAndroid.show(message, ToastAndroid.SHORT);
+                            } else {
+                                Alert.alert('Favourites', message);
+                            }
+                        }}
+                        disabled={toggleFavorite.isPending}
                         style={{ 
                             position: 'absolute', top: 10, right: 10, 
                             backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20, 
                             width: 28, height: 28, alignItems: 'center', justifyContent: 'center' 
                         }}
                     >
-                        <Ionicons name="bookmark-outline" size={16} color="#FFF" />
+                        <Ionicons name={isFavorited ? 'bookmark' : 'bookmark-outline'} size={16} color="#FFF" />
                     </TouchableOpacity>
                 </ImageBackground>
             </View>

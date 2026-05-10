@@ -26,6 +26,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
     const [vegOnly, setVegOnly] = useState(false);
+    const [globalVegOnlyMode, setGlobalVegOnlyMode] = useState(false);
     const [topRated, setTopRated] = useState(false);
     const [hasOffers, setHasOffers] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('default');
@@ -83,6 +84,14 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     useEffect(() => {
         loadFilters();
     }, []);
+
+    useEffect(() => {
+        const unsub = navigation.addListener('focus', () => {
+            void storage.getVegOnlyMode().then(setGlobalVegOnlyMode);
+        });
+        void storage.getVegOnlyMode().then(setGlobalVegOnlyMode);
+        return unsub;
+    }, [navigation]);
 
     useEffect(() => {
         saveFilters();
@@ -167,8 +176,12 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     const isVegRestaurant = (item: Restaurant) => {
-        if (item.vegOnly || item.isVeg) return true;
         const tags = getCuisineTags(item).map((tag) => tag.toLowerCase());
+        const hasNonVeg = tags.includes('non-veg') || tags.includes('non veg') || tags.includes('nonveg') || tags.some(t => t.includes('non-veg') || t.includes('non veg') || t.includes('nonveg'));
+        
+        if (hasNonVeg) return false;
+        if (item.vegOnly || item.isVeg) return true;
+        
         return tags.includes('veg') || tags.includes('vegetarian') || tags.includes('pure veg');
     };
 
@@ -181,13 +194,14 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     }, [allRestaurants]);
 
     const filteredAndSortedRestaurants = useMemo(() => {
+        const effectiveVegOnly = vegOnly || globalVegOnlyMode;
         const lowerQuery = debouncedQuery.toLowerCase();
         let filtered = allRestaurants.filter((item) => {
             const cuisines = getCuisineTags(item);
             const searchable = [item.name, item.description, ...cuisines].filter(Boolean).join(' ').toLowerCase();
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
             if (selectedCuisine && !cuisines.includes(selectedCuisine)) return false;
-            if (vegOnly && !isVegRestaurant(item)) return false;
+            if (effectiveVegOnly && !isVegRestaurant(item)) return false;
             if (topRated && getRatingValue(item) < 4.0) return false;
             if (hasOffers && !hasAnyOffer(item)) return false;
             return true;
@@ -219,7 +233,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         }
 
         return filtered;
-    }, [allRestaurants, debouncedQuery, selectedCuisine, vegOnly, topRated, hasOffers, sortBy]);
+    }, [allRestaurants, debouncedQuery, selectedCuisine, vegOnly, globalVegOnlyMode, topRated, hasOffers, sortBy]);
 
     const handleRestaurantPress = useCallback((item: Restaurant) => {
         navigation.navigate('RestaurantDetail', { item });
@@ -309,7 +323,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         ],
                         multi: true,
                         selected: [
-                            ...(vegOnly ? ['veg'] : []),
+                            ...((vegOnly || globalVegOnlyMode) ? ['veg'] : []),
                             ...(topRated ? ['topRated'] : []),
                             ...(hasOffers ? ['offers'] : []),
                         ],
@@ -323,7 +337,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     {
                         title: 'Diet',
                         options: [{ value: 'veg', label: 'Veg Only' }],
-                        selected: vegOnly ? 'veg' : null,
+                        selected: (vegOnly || globalVegOnlyMode) ? 'veg' : null,
                         onSelect: () => setVegOnly(p => !p),
                     },
                     {
@@ -374,10 +388,15 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => setVegOnly(p => !p)}
-                        style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                        onPress={() => {
+                            const next = !vegOnly;
+                            setVegOnly(next);
+                            void storage.setVegOnlyMode(next);
+                            setGlobalVegOnlyMode(next);
+                        }}
+                        style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: (vegOnly || globalVegOnlyMode) ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                     >
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Pure Veg</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: (vegOnly || globalVegOnlyMode) ? '#FFF' : '#FF7F50' }}>Pure Veg</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

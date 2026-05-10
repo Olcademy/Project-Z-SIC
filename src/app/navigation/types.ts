@@ -18,6 +18,7 @@ export type TiffinStackParamList = {
 export type EventsStackParamList = {
     EventList: undefined;
     EventDetail: { item: Event } | { id: string; item?: Event };
+    FavoriteEvents: undefined;
 };
 
 export type SettingsStackParamList = {

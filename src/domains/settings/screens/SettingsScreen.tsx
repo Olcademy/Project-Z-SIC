@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Switch, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { useTheme } from '@/ui/context/ThemeContext';
 import { useUser } from '@/ui/context/UserContext';
 import { SettingsStackParamList } from '@/app/navigation/types';
 import { ScreenHeader } from '@/ui/components/ScreenHeader';
+import { storage } from '@/services/storage/localStorage';
 
 type SettingsNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
@@ -20,6 +21,19 @@ export const SettingsScreen: React.FC = () => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const appVersion = appConfig?.expo?.version || '1.0.0';
+
+    useEffect(() => {
+        const load = async () => {
+            const saved = await storage.getVegOnlyMode();
+            setIsVegMode(saved);
+        };
+        void load();
+    }, []);
+
+    const handleVegModeChange = (next: boolean) => {
+        setIsVegMode(next);
+        void storage.setVegOnlyMode(next);
+    };
 
     const cardStyle = {
         backgroundColor: '#fff',
@@ -124,7 +138,7 @@ export const SettingsScreen: React.FC = () => {
                         </View>
                         <Switch 
                             value={isVegMode} 
-                            onValueChange={setIsVegMode} 
+                            onValueChange={handleVegModeChange} 
                             trackColor={{ false: '#EEEEEE', true: '#FF7F50' }}
                             thumbColor="#fff"
                         />

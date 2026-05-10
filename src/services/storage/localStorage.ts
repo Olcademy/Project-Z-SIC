@@ -9,6 +9,10 @@ const KEYS = {
     CACHE: '@sic:cache',
     FAVORITE_RESTAURANTS: '@sic:favorites:restaurants',
     FAVORITE_TIFFINS: '@sic:favorites:tiffins',
+    FAVORITE_EVENTS: '@sic:favorites:events',
+    FAVORITE_RESTAURANTS_ITEMS: '@sic:favorites:restaurants:items',
+    FAVORITE_TIFFINS_ITEMS: '@sic:favorites:tiffins:items',
+    FAVORITE_EVENTS_ITEMS: '@sic:favorites:events:items',
 };
 
 type CachePayload<T> = {
@@ -63,6 +67,25 @@ export const storage = {
         } catch (error) {
             console.error('Error getting preferences:', error);
             return null;
+        }
+    },
+
+    async getVegOnlyMode(): Promise<boolean> {
+        try {
+            const prefs = await this.getPreferences();
+            return !!prefs?.vegOnlyMode;
+        } catch (error) {
+            console.error('Error getting veg-only mode:', error);
+            return false;
+        }
+    },
+
+    async setVegOnlyMode(enabled: boolean) {
+        try {
+            const prefs = (await this.getPreferences()) ?? {};
+            await this.savePreferences({ ...prefs, vegOnlyMode: !!enabled });
+        } catch (error) {
+            console.error('Error saving veg-only mode:', error);
         }
     },
 
@@ -191,6 +214,50 @@ export const storage = {
         return { ids: next, isFavorited: set.has(safeId) };
     },
 
+    async getFavoriteRestaurantItems<T = any>(): Promise<T[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_RESTAURANTS_ITEMS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed as T[];
+        } catch (error) {
+            console.error('Error getting favorite restaurant items:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteRestaurantItems(items: any[]) {
+        try {
+            const safe = Array.isArray(items) ? items : [];
+            const map = new Map<string, any>();
+            for (const it of safe) {
+                const id = String(it?._id || it?.id || '').trim();
+                if (!id) continue;
+                map.set(id, { ...it, _id: id });
+            }
+            await AsyncStorage.setItem(KEYS.FAVORITE_RESTAURANTS_ITEMS, JSON.stringify(Array.from(map.values())));
+        } catch (error) {
+            console.error('Error saving favorite restaurant items:', error);
+        }
+    },
+
+    async upsertFavoriteRestaurantItem(item: any) {
+        const id = String(item?._id || item?.id || '').trim();
+        if (!id) return;
+        const current = await this.getFavoriteRestaurantItems<any>();
+        const map = new Map<string, any>(current.map((it) => [String(it?._id || it?.id || '').trim(), it]));
+        map.set(id, { ...item, _id: id });
+        await this.setFavoriteRestaurantItems(Array.from(map.values()));
+    },
+
+    async removeFavoriteRestaurantItem(id: string) {
+        const safeId = String(id || '').trim();
+        if (!safeId) return;
+        const current = await this.getFavoriteRestaurantItems<any>();
+        const next = current.filter((it) => String(it?._id || it?.id || '').trim() !== safeId);
+        await this.setFavoriteRestaurantItems(next);
+    },
+
     async getFavoriteTiffinIds(): Promise<string[]> {
         try {
             const raw = await AsyncStorage.getItem(KEYS.FAVORITE_TIFFINS);
@@ -223,6 +290,128 @@ export const storage = {
         const next = Array.from(set);
         await this.setFavoriteTiffinIds(next);
         return { ids: next, isFavorited: set.has(safeId) };
+    },
+
+    async getFavoriteEventIds(): Promise<string[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_EVENTS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map((v) => String(v)).filter(Boolean);
+        } catch (error) {
+            console.error('Error getting favorite events:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteEventIds(ids: string[]) {
+        try {
+            const unique = Array.from(new Set(ids.map((v) => String(v)).filter(Boolean)));
+            await AsyncStorage.setItem(KEYS.FAVORITE_EVENTS, JSON.stringify(unique));
+        } catch (error) {
+            console.error('Error saving favorite events:', error);
+        }
+    },
+
+    async toggleFavoriteEventId(id: string): Promise<{ ids: string[]; isFavorited: boolean }> {
+        const safeId = String(id || '').trim();
+        if (!safeId) return { ids: await this.getFavoriteEventIds(), isFavorited: false };
+
+        const current = await this.getFavoriteEventIds();
+        const set = new Set(current);
+        if (set.has(safeId)) set.delete(safeId);
+        else set.add(safeId);
+        const next = Array.from(set);
+        await this.setFavoriteEventIds(next);
+        return { ids: next, isFavorited: set.has(safeId) };
+    },
+
+    async getFavoriteEventItems<T = any>(): Promise<T[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_EVENTS_ITEMS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed as T[];
+        } catch (error) {
+            console.error('Error getting favorite event items:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteEventItems(items: any[]) {
+        try {
+            const safe = Array.isArray(items) ? items : [];
+            const map = new Map<string, any>();
+            for (const it of safe) {
+                const id = String(it?._id || it?.id || '').trim();
+                if (!id) continue;
+                map.set(id, { ...it, _id: id });
+            }
+            await AsyncStorage.setItem(KEYS.FAVORITE_EVENTS_ITEMS, JSON.stringify(Array.from(map.values())));
+        } catch (error) {
+            console.error('Error saving favorite event items:', error);
+        }
+    },
+
+    async upsertFavoriteEventItem(item: any) {
+        const id = String(item?._id || item?.id || '').trim();
+        if (!id) return;
+        const current = await this.getFavoriteEventItems<any>();
+        const map = new Map<string, any>(current.map((it) => [String(it?._id || it?.id || '').trim(), it]));
+        map.set(id, { ...item, _id: id });
+        await this.setFavoriteEventItems(Array.from(map.values()));
+    },
+
+    async removeFavoriteEventItem(id: string) {
+        const safeId = String(id || '').trim();
+        if (!safeId) return;
+        const current = await this.getFavoriteEventItems<any>();
+        const next = current.filter((it) => String(it?._id || it?.id || '').trim() !== safeId);
+        await this.setFavoriteEventItems(next);
+    },
+
+    async getFavoriteTiffinItems<T = any>(): Promise<T[]> {
+        try {
+            const raw = await AsyncStorage.getItem(KEYS.FAVORITE_TIFFINS_ITEMS);
+            const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+            if (!Array.isArray(parsed)) return [];
+            return parsed as T[];
+        } catch (error) {
+            console.error('Error getting favorite tiffin items:', error);
+            return [];
+        }
+    },
+
+    async setFavoriteTiffinItems(items: any[]) {
+        try {
+            const safe = Array.isArray(items) ? items : [];
+            const map = new Map<string, any>();
+            for (const it of safe) {
+                const id = String(it?._id || it?.id || '').trim();
+                if (!id) continue;
+                map.set(id, { ...it, _id: id });
+            }
+            await AsyncStorage.setItem(KEYS.FAVORITE_TIFFINS_ITEMS, JSON.stringify(Array.from(map.values())));
+        } catch (error) {
+            console.error('Error saving favorite tiffin items:', error);
+        }
+    },
+
+    async upsertFavoriteTiffinItem(item: any) {
+        const id = String(item?._id || item?.id || '').trim();
+        if (!id) return;
+        const current = await this.getFavoriteTiffinItems<any>();
+        const map = new Map<string, any>(current.map((it) => [String(it?._id || it?.id || '').trim(), it]));
+        map.set(id, { ...item, _id: id });
+        await this.setFavoriteTiffinItems(Array.from(map.values()));
+    },
+
+    async removeFavoriteTiffinItem(id: string) {
+        const safeId = String(id || '').trim();
+        if (!safeId) return;
+        const current = await this.getFavoriteTiffinItems<any>();
+        const next = current.filter((it) => String(it?._id || it?.id || '').trim() !== safeId);
+        await this.setFavoriteTiffinItems(next);
     },
 
     // General utility

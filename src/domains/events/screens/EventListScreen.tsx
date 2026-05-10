@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, useWindowDimensions, ImageBackground, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, useWindowDimensions, ImageBackground, RefreshControl, Platform, ToastAndroid, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EventsStackParamList } from '@/app/navigation/types';
-import { useEventsInfinite } from '../hooks/useEvents';
+import { useEventsInfinite, useLocalEventFavorites, useToggleLocalEventFavorite } from '../hooks/useEvents';
 import { Event } from '@/domains/events/types';
 import { EventCard } from '../components/EventCard';
 import { EmptyState } from '@/ui/components/EmptyState';
@@ -14,11 +14,18 @@ import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
 import { prefetchImages } from '@/ui/utils/imagePrefetch';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc';
 
 const FeaturedEventCard = ({ item, onPress }: { item: Event, onPress: (item: Event) => void }) => {
+    const { data: favoriteIds } = useLocalEventFavorites();
+    const toggleFavorite = useToggleLocalEventFavorite();
+    const queryClient = useQueryClient();
+
+    const isFavorited = useMemo(() => (favoriteIds ?? []).includes(item._id), [favoriteIds, item._id]);
+
     return (
         <TouchableOpacity 
             onPress={() => onPress(item)}
@@ -33,8 +40,28 @@ const FeaturedEventCard = ({ item, onPress }: { item: Event, onPress: (item: Eve
                 imageStyle={{ borderRadius: 0 }}
                 resizeMode="cover"
             >
-                <TouchableOpacity style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="bookmark-outline" size={18} color="#FFF" />
+                <TouchableOpacity
+                    onPress={async () => {
+                        const prev = isFavorited;
+                        const result = await toggleFavorite.mutateAsync(item._id);
+                        if (result.isFavorited) {
+                            await storage.upsertFavoriteEventItem(item);
+                        } else {
+                            await storage.removeFavoriteEventItem(item._id);
+                        }
+                        queryClient.invalidateQueries({ queryKey: ['local-event-favorite-items'] });
+
+                        const message = prev ? 'Removed from favourites' : 'Added to favourites';
+                        if (Platform.OS === 'android') {
+                            ToastAndroid.show(message, ToastAndroid.SHORT);
+                        } else {
+                            Alert.alert('Favourites', message);
+                        }
+                    }}
+                    disabled={toggleFavorite.isPending}
+                    style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Ionicons name={isFavorited ? 'bookmark' : 'bookmark-outline'} size={18} color="#FFF" />
                 </TouchableOpacity>
             </ImageBackground>
             <View style={{ marginTop: 10 }}>
@@ -220,6 +247,14 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                     >
                         <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Near & Fast</Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('FavoriteEvents')}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Ionicons name="bookmark" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Favourites</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </View>
         </View>
@@ -318,7 +353,16 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                         ],
                         selected: sortBy,
                         onSelect: (v) => setSortBy(v as SortOption),
-                    }
+                    },
+                    {
+                        title: 'Favourites',
+                        options: [{ value: 'open', label: 'View favourites' }],
+                        selected: null,
+                        onSelect: () => {
+                            setShowFilters(false);
+                            navigation.navigate('FavoriteEvents');
+                        },
+                    },
                 ]}
             />
         </View>

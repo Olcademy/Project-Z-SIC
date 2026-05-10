@@ -7,6 +7,7 @@ import { useUser } from '@/ui/context/UserContext';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_TIFFIN_FAVORITES_KEY = ['local-tiffin-favorites'] as const;
+const LOCAL_TIFFIN_FAVORITE_ITEMS_KEY = ['local-tiffin-favorite-items'] as const;
 
 type TiffinListParams = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -45,6 +46,31 @@ const normalizeTiffin = (item: Tiffin): Tiffin => {
             ? item.menu.serviceDays
             : undefined;
 
+    const anyItem = item as any;
+    const rawVegCandidates = [
+        item.vegOnly,
+        anyItem?.isVeg,
+        anyItem?.veg,
+        anyItem?.is_veg,
+        anyItem?.veg_only,
+        anyItem?.pureVeg,
+        anyItem?.pure_veg,
+    ];
+    let vegOnly = rawVegCandidates.find((v) => typeof v === 'boolean') as boolean | undefined;
+
+    if (!vegOnly) {
+        const category = Array.isArray(item.category) ? item.category : [];
+        const tags = category.map((c) => String(c).toLowerCase());
+        const hasNonVeg = tags.includes('non-veg') || tags.includes('non veg') || tags.includes('nonveg') || tags.some(t => t.includes('non-veg') || t.includes('non veg') || t.includes('nonveg'));
+        const hasVeg = tags.includes('veg') || tags.includes('vegetarian') || tags.includes('pure veg') || tags.includes('pure_veg');
+        
+        if (hasNonVeg) {
+            vegOnly = false;
+        } else if (hasVeg) {
+            vegOnly = true;
+        }
+    }
+
     return {
         ...item,
         _id: item._id || item.id || '',
@@ -53,6 +79,7 @@ const normalizeTiffin = (item: Tiffin): Tiffin => {
         images,
         coverageAreas: item.deliveryCity || item.coverageAreas,
         scheduleDays: serviceDays || item.scheduleDays,
+        vegOnly: vegOnly ?? item.vegOnly,
     } as Tiffin;
 };
 
@@ -69,7 +96,7 @@ export const useTiffins = (params?: TiffinListParams) => {
                 return normalized;
             } catch (error) {
                 const cached = await storage.getCache<Tiffin[]>('tiffins:list', LIST_CACHE_TTL);
-                return cached ?? [];
+                return (cached ?? []).map((item) => normalizeTiffin(item));
             }
         },
     });
@@ -99,7 +126,7 @@ export const useTiffinsInfinite = (params?: TiffinListParams) => {
                 if (pageParam === 1) {
                     const cached = await storage.getCache<Tiffin[]>('tiffins:list', LIST_CACHE_TTL);
                     if (cached) {
-                        return { items: cached, nextPage: undefined };
+                        return { items: cached.map((item) => normalizeTiffin(item)), nextPage: undefined };
                     }
                 }
                 return { items: [], nextPage: undefined };
@@ -196,6 +223,14 @@ export const useLocalTiffinFavorites = () => {
     return useQuery({
         queryKey: LOCAL_TIFFIN_FAVORITES_KEY,
         queryFn: async () => storage.getFavoriteTiffinIds(),
+        staleTime: Infinity,
+    });
+};
+
+export const useLocalTiffinFavoriteItems = () => {
+    return useQuery({
+        queryKey: LOCAL_TIFFIN_FAVORITE_ITEMS_KEY,
+        queryFn: async () => storage.getFavoriteTiffinItems<Tiffin>(),
         staleTime: Infinity,
     });
 };

@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { EventDetailScreen } from '@/domains/events/screens/EventDetailScreen';
 import { EventListScreen } from '@/domains/events/screens/EventListScreen';
+import { FavoriteEventsScreen } from '@/domains/events/screens/FavoriteEventsScreen';
 import { RestaurantDetailScreen } from '@/domains/restaurants/screens/RestaurantDetailScreen';
 import { RestaurantListScreen } from '@/domains/restaurants/screens/RestaurantListScreen';
 import { FavoriteRestaurantsScreen } from '@/domains/restaurants/screens/FavoriteRestaurantsScreen';
@@ -51,6 +52,7 @@ const TiffinStackNavigator = () => (
 const EventsStackNavigator = () => (
     <EventsStack.Navigator screenOptions={{ headerShown: false }}>
         <EventsStack.Screen name="EventList" component={EventListScreen} />
+        <EventsStack.Screen name="FavoriteEvents" component={FavoriteEventsScreen} />
         <EventsStack.Screen name="EventDetail" component={EventDetailScreen} />
     </EventsStack.Navigator>
 );

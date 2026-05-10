@@ -5,6 +5,8 @@ import { Restaurant } from '@/domains/restaurants/types';
 import { useTheme } from '@/ui/context/ThemeContext';
 import { useLocalRestaurantFavorites, useToggleLocalRestaurantFavorite } from '../hooks/useRestaurants';
 import { useUser } from '@/ui/context/UserContext';
+import { storage } from '@/services/storage/localStorage';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RestaurantCardProps {
     item: Restaurant;
@@ -22,6 +24,7 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
 
     const { data: localFavorites } = useLocalRestaurantFavorites();
     const toggleLocalFavorite = useToggleLocalRestaurantFavorite();
+    const queryClient = useQueryClient();
 
     const isFavorited = useMemo(() => {
         const ids = localFavorites ?? [];
@@ -33,7 +36,14 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
     const handleToggleFavorite = async () => {
         // Always update locally first (works for guest and offline).
         const prev = isFavorited;
-        await toggleLocalFavorite.mutateAsync(item._id);
+        const result = await toggleLocalFavorite.mutateAsync(item._id);
+
+        if (result.isFavorited) {
+            await storage.upsertFavoriteRestaurantItem(item);
+        } else {
+            await storage.removeFavoriteRestaurantItem(item._id);
+        }
+        queryClient.invalidateQueries({ queryKey: ['local-restaurant-favorite-items'] });
 
         const message = prev ? 'Removed from favourites' : 'Added to favourites';
         if (Platform.OS === 'android') {

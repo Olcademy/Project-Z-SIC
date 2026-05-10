@@ -25,6 +25,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [vegOnly, setVegOnly] = useState(false);
+    const [globalVegOnlyMode, setGlobalVegOnlyMode] = useState(false);
     const [topRated, setTopRated] = useState(false);
     const [hasOffers, setHasOffers] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('default');
@@ -73,6 +74,14 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     }, []);
 
     useEffect(() => {
+        const unsub = navigation.addListener('focus', () => {
+            void storage.getVegOnlyMode().then(setGlobalVegOnlyMode);
+        });
+        void storage.getVegOnlyMode().then(setGlobalVegOnlyMode);
+        return unsub;
+    }, [navigation]);
+
+    useEffect(() => {
         void storage.saveFilters('tiffins', {
             vegOnly,
             topRated,
@@ -117,12 +126,33 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         return false;
     };
 
+    const isVegTiffin = (item: Tiffin) => {
+        const text = [
+            item.name, 
+            item.shortDescription, 
+            ...(Array.isArray(item.category) ? item.category : [])
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        const nonVegKeywords = ['chicken', 'mutton', 'beef', 'pork', 'fish', 'prawn', 'meat', 'egg', 'non-veg', 'non veg', 'nonveg'];
+        if (nonVegKeywords.some(kw => text.includes(kw))) {
+            return false;
+        }
+
+        const vegKeywords = ['veg', 'vegetarian', 'paneer', 'dal', 'roti', 'rice', 'sabzi', 'pure veg', 'chole', 'rajma', 'aloo', 'thali'];
+        if (vegKeywords.some(kw => text.includes(kw))) {
+            return true;
+        }
+
+        return item.vegOnly === true;
+    };
+
     const filteredAndSortedTiffins = useMemo(() => {
+        const effectiveVegOnly = vegOnly || globalVegOnlyMode;
         const lowerQuery = debouncedQuery.toLowerCase();
         let filtered = allTiffins.filter((item) => {
             const searchable = [item.name, item.shortDescription].filter(Boolean).join(' ').toLowerCase();
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
-            if (vegOnly && !item.vegOnly) return false;
+            if (effectiveVegOnly && !isVegTiffin(item)) return false;
             if (topRated && getRatingValue(item) < 4.0) return false;
             if (hasOffers && !hasAnyOffer(item)) return false;
             return true;
@@ -133,11 +163,11 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         } else if (sortBy === 'price-high') {
             filtered = filtered.sort((a, b) => (getPriceValue(b) ?? 0) - (getPriceValue(a) ?? 0));
         } else if (sortBy === 'veg-first') {
-            filtered = filtered.sort((a, b) => Number(!!b.vegOnly) - Number(!!a.vegOnly));
+            filtered = filtered.sort((a, b) => Number(!!isVegTiffin(b)) - Number(!!isVegTiffin(a)));
         }
 
         return filtered;
-    }, [allTiffins, debouncedQuery, vegOnly, topRated, hasOffers, sortBy]);
+    }, [allTiffins, debouncedQuery, vegOnly, globalVegOnlyMode, topRated, hasOffers, sortBy]);
 
     const handleTiffinPress = useCallback((item: Tiffin) => {
         navigation.navigate('TiffinDetail', { item });
@@ -166,10 +196,15 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginRight: 10 }} />
 
                 <TouchableOpacity
-                    onPress={() => setVegOnly(p => !p)}
-                    style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: vegOnly ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    onPress={() => {
+                        const next = !vegOnly;
+                        setVegOnly(next);
+                        void storage.setVegOnlyMode(next);
+                        setGlobalVegOnlyMode(next);
+                    }}
+                    style={{ marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: (vegOnly || globalVegOnlyMode) ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                 >
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: vegOnly ? '#FFF' : '#FF7F50' }}>Veg</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: (vegOnly || globalVegOnlyMode) ? '#FFF' : '#FF7F50' }}>Veg</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -296,7 +331,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                         ],
                         multi: true,
                         selected: [
-                            ...(vegOnly ? ['veg'] : []),
+                            ...((vegOnly || globalVegOnlyMode) ? ['veg'] : []),
                             ...(topRated ? ['topRated'] : []),
                             ...(hasOffers ? ['offers'] : []),
                         ],

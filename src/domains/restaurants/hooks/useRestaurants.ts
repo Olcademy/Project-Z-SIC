@@ -7,6 +7,7 @@ import { useUser } from '@/ui/context/UserContext';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_FAVORITES_KEY = ['local-restaurant-favorites'] as const;
+const LOCAL_FAVORITE_ITEMS_KEY = ['local-restaurant-favorite-items'] as const;
 
 type TakeawayListParams = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -214,6 +215,14 @@ export const useLocalRestaurantFavorites = () => {
         queryFn: async () => {
             return storage.getFavoriteRestaurantIds();
         },
+        staleTime: Infinity,
+    });
+};
+
+export const useLocalRestaurantFavoriteItems = () => {
+    return useQuery({
+        queryKey: LOCAL_FAVORITE_ITEMS_KEY,
+        queryFn: async () => storage.getFavoriteRestaurantItems<Restaurant>(),
         staleTime: Infinity,
     });
 };

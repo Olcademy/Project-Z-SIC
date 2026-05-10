@@ -420,7 +420,7 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                                 overflow: 'hidden',
                             }}
                         >
-                            {mostOrderedTogether.map((row, index) => {
+                            {mostOrderedTogether.filter(row => !filters.pureVeg || row.veg).map((row, index) => {
                                 const badgeColor = row.veg ? '#1B5E20' : '#B71C1C';
                                 return (
                                     <View

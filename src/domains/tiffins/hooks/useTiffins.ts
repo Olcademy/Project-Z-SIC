@@ -4,6 +4,7 @@ import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
 import { useUser } from '@/ui/context/UserContext';
+import { manualTiffins } from '@/domains/tiffins/data/manualTiffins';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_TIFFIN_FAVORITES_KEY = ['local-tiffin-favorites'] as const;
@@ -93,7 +94,10 @@ export const useTiffins = (params?: TiffinListParams) => {
                 const items = Array.isArray(payload) ? payload : [];
                 const normalized = items.map((item) => normalizeTiffin(item));
                 await storage.saveCache('tiffins:list', normalized);
-                return normalized;
+                return [
+                    ...normalized,
+                    ...manualTiffins.map(normalizeTiffin),
+                ];
             } catch (error) {
                 const cached = await storage.getCache<Tiffin[]>('tiffins:list', LIST_CACHE_TTL);
                 return (cached ?? []).map((item) => normalizeTiffin(item));
@@ -119,7 +123,12 @@ export const useTiffinsInfinite = (params?: TiffinListParams) => {
                 }
 
                 return {
-                    items: normalized,
+                    items: [
+                        ...normalized,
+                        ...(pageParam === 1
+                        ? manualTiffins.map(normalizeTiffin)
+                        : []),
+                    ],
                     nextPage: items.length >= 10 ? pageParam + 1 : undefined,
                 };
             } catch (error) {

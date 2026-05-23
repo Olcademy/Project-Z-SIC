@@ -9,10 +9,11 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface TiffinCardProps {
     item: Tiffin;
+    vegOnly?: boolean;
     onPress: (item: Tiffin) => void;
 }
 
-export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
+export const TiffinCard = memo<TiffinCardProps>(({ item, vegOnly, onPress }) => {
     const theme = useTheme();
     const { data: localFavorites } = useLocalTiffinFavorites();
     const toggleFavorite = useToggleLocalTiffinFavorite();
@@ -76,7 +77,7 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, onPress }) => {
             <View style={{ height: 180, backgroundColor: '#F3F4F6' }}>
                 <ImageBackground source={{ uri: imageUrl }} style={{ flex: 1 }} resizeMode="cover">
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 12 }}>
-                        {isActuallyVeg && (
+                        {isActuallyVeg && vegOnly && (
                             <View style={{ backgroundColor: '#1B5E20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
                                 <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>🌿 VEG ONLY</Text>
                             </View>

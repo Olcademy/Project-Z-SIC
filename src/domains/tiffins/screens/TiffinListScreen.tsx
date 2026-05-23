@@ -145,9 +145,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
 
         return item.vegOnly === true;
     };
-
+    const effectiveVegOnly = vegOnly || globalVegOnlyMode;
     const filteredAndSortedTiffins = useMemo(() => {
-        const effectiveVegOnly = vegOnly || globalVegOnlyMode;
         const lowerQuery = debouncedQuery.toLowerCase();
         let filtered = allTiffins.filter((item) => {
             const searchable = [item.name, item.shortDescription].filter(Boolean).join(' ').toLowerCase();
@@ -155,6 +154,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             if (effectiveVegOnly && !isVegTiffin(item)) return false;
             if (topRated && getRatingValue(item) < 4.0) return false;
             if (hasOffers && !hasAnyOffer(item)) return false;
+            console.log(item._id);
             return true;
         });
 
@@ -279,7 +279,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 <FlatList
                     data={filteredAndSortedTiffins}
                     keyExtractor={(item) => item._id}
-                    renderItem={({ item }) => <TiffinCard item={item} onPress={handleTiffinPress} />}
+                    renderItem={({ item }) => <TiffinCard item={item} vegOnly={effectiveVegOnly}  onPress={handleTiffinPress} />}
                     ListHeaderComponent={renderHeader}
                     contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 }}
                     onEndReached={() => hasNextPage && fetchNextPage()}

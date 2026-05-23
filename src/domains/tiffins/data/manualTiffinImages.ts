@@ -686,6 +686,7 @@ export const manualTiffinImages: Record<string, any[]> = {
         nonVegImagesIndex.imgnv2,
         nonVegImagesIndex.imgnv3,
         nonVegImagesIndex.imgnv4,
+        nonVegImagesIndex.imgnv5,
     ],
     '68691dc7f9a76470f5823001': [
         nonVegImagesIndex.imgnv5,
@@ -699,6 +700,7 @@ export const manualTiffinImages: Record<string, any[]> = {
         nonVegImagesIndex.imgnv11,
         nonVegImagesIndex.imgnv12,
         nonVegImagesIndex.imgnv13,
+        nonVegImagesIndex.imgnv14,
     ],
     'nv-4': [
         nonVegImagesIndex.imgnv14,
@@ -710,51 +712,65 @@ export const manualTiffinImages: Record<string, any[]> = {
         nonVegImagesIndex.imgnv18,
         nonVegImagesIndex.imgnv19,
         nonVegImagesIndex.imgnv20,
+        nonVegImagesIndex.imgnv33,
+        nonVegImagesIndex.imgnv34,
     ],
     'nv-6': [
         nonVegImagesIndex.imgnv21,
         nonVegImagesIndex.imgnv22,
         nonVegImagesIndex.imgnv23,
+        nonVegImagesIndex.imgnv24,
+        nonVegImagesIndex.imgnv25,
     ],
     'nv-7': [
         nonVegImagesIndex.imgnv24,
         nonVegImagesIndex.imgnv25,
         nonVegImagesIndex.imgnv26,
+        nonVegImagesIndex.imgnv27,
+        nonVegImagesIndex.imgnv28,
     ],
     'nv-8': [
         nonVegImagesIndex.imgnv27,
         nonVegImagesIndex.imgnv28,
         nonVegImagesIndex.imgnv29,
         nonVegImagesIndex.imgnv30,
+        nonVegImagesIndex.imgnv31,
+
     ],
     'nv-9': [
         nonVegImagesIndex.imgnv31,
         nonVegImagesIndex.imgnv32,
         nonVegImagesIndex.imgnv33,
         nonVegImagesIndex.imgnv34,
+        nonVegImagesIndex.imgnv35,
     ],
     'nv-10': [
         nonVegImagesIndex.imgnv35,
         nonVegImagesIndex.imgnv36,
         nonVegImagesIndex.imgnv37,
+        nonVegImagesIndex.imgnv38,
+        nonVegImagesIndex.imgnv39,
     ],
     'nv-11': [
         nonVegImagesIndex.imgnv38,
         nonVegImagesIndex.imgnv39,
         nonVegImagesIndex.imgnv40,
         nonVegImagesIndex.imgnv41,
+        nonVegImagesIndex.imgnv42,
     ],
     'nv-12': [
         nonVegImagesIndex.imgnv43,
         nonVegImagesIndex.imgnv44,
         nonVegImagesIndex.imgnv45,
         nonVegImagesIndex.imgnv46,
+        nonVegImagesIndex.imgnv47,
     ],
     'nv-13': [
         nonVegImagesIndex.imgnv47,
         nonVegImagesIndex.imgnv48,
         nonVegImagesIndex.imgnv49,
         nonVegImagesIndex.imgnv50,
+        nonVegImagesIndex.imgnv51,
     ],
     'nv-14': [
         nonVegImagesIndex.imgnv51,
@@ -768,6 +784,7 @@ export const manualTiffinImages: Record<string, any[]> = {
         nonVegImagesIndex.imgnv57,
         nonVegImagesIndex.imgnv58,
         nonVegImagesIndex.imgnv59,
+        nonVegImagesIndex.imgnv60,
     ],
     
 };

@@ -75,7 +75,13 @@ export const TiffinCard = memo<TiffinCardProps>(({ item, vegOnly, onPress }) => 
             onPress={() => onPress(item)}
         >
             <View style={{ height: 180, backgroundColor: '#F3F4F6' }}>
-                <ImageBackground source={{ uri: imageUrl }} style={{ flex: 1 }} resizeMode="cover">
+                <ImageBackground 
+                source={
+                    typeof imageUrl === 'string'
+                    ? { uri: imageUrl }
+                    : imageUrl
+                }
+                style={{ flex: 1 }} resizeMode="cover">
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 12 }}>
                         {isActuallyVeg && vegOnly && (
                             <View style={{ backgroundColor: '#1B5E20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>

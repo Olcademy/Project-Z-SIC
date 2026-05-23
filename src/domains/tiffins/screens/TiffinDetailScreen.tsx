@@ -18,6 +18,7 @@ import { recommendationsOrderedTogetherMap } from "@/domains/tiffins/data/recomm
 import { manualTiffinImages } from '@/domains/tiffins/data/manualTiffinImages';
 import rotiImg from '../../../../assets/roti.png';
 import naanImg from '../../../../assets/naan.png';
+// import { addonItems } from '../data/orderedDishes';
 
 const PRIMARY = '#FF7A00';
 
@@ -58,29 +59,38 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const anyFilterActive = filters.budget || filters.rating4 || filters.pureVeg;
 
     const mostOrderedTogether = useMemo(() => {
-        return [
-            {
-                key: 'roti',
-                title: 'OG Roti',
-                subtitle: 'Whole wheat · fresh & soft',
-                description: 'Classic whole-wheat roti made fresh. Best with dal, sabzi, and gravies.',
-                price: 12,
-                rating: 4.6,
-                veg: true,
-                image: rotiImg,
-            },
-            {
-                key: 'nonVegNaan',
-                title: 'Non-veg naan',
-                subtitle: 'Tandoori naan · buttery finish',
-                description: 'Soft tandoori naan brushed with butter. A great pairing with rich non-veg curries.',
-                price: 28,
-                rating: 4.3,
-                veg: false,
-                image: naanImg,
-            },
-        ] as const;
-    }, []);
+
+        if (!normalizedTiffin) return [];
+        const ids = recommendationsOrderedTogetherMap[normalizedTiffin._id] ?? [];
+        
+        return ids.map(id => orderedDishes[id]);
+
+    }, [normalizedTiffin]);
+    // const mostOrderedTogether = useMemo(() => {
+        
+        // return [
+        //     {
+        //         key: 'roti',
+        //         title: 'OG Roti',
+        //         subtitle: 'Whole wheat · fresh & soft',
+        //         description: 'Classic whole-wheat roti made fresh. Best with dal, sabzi, and gravies.',
+        //         price: 12,
+        //         rating: 4.6,
+        //         veg: true,
+        //         image: rotiImg,
+        //     },
+        //     {
+        //         key: 'nonVegNaan',
+        //         title: 'Non-veg naan',
+        //         subtitle: 'Tandoori naan · buttery finish',
+        //         description: 'Soft tandoori naan brushed with butter. A great pairing with rich non-veg curries.',
+        //         price: 28,
+        //         rating: 4.3,
+        //         veg: false,
+        //         image: naanImg,
+        //     },
+        // ] as const;
+    // }, []);
 
     const recommendedForYou = useMemo(() => {
         const items = [

@@ -89,7 +89,7 @@ export const recommendationsOrderedTogetherMap: Record<string, string[]> = {
     '695293c27495f56bcbe3a3f4': ['shahiPaneer', 'naan'],
     '695bcea71be59ef4def21cd8': ['vegKofta', 'mixVeg'],
 
-    'manual-1': ['roti', 'paneerButterMasala'],
+    '68691dc6f9a76470f5821841': ['roti', 'paneerButterMasala'],
 
     //nonveg dishes
     '68691dc7f9a76470f5821898': ['chickenBiryani', 'fishCurry'],
@@ -135,19 +135,19 @@ export const recommendationsOrderedTogetherMap: Record<string, string[]> = {
     '68691dd1f9a76470f582221c': ['eggRice', 'chicken65'],
     '68691dd1f9a76470f5822236': ['chickenCurry', 'fishCurry'],
 
-    'nv-1': ['butterChicken', 'eggCurry'],
-    '68691dc7f9a76470f5823001': ['chickenBiryani', 'kebabPlatter'],
-    'nv-3': ['muttonCurry', 'chickenRoll'],
-    'nv-4': ['prawnMasala', 'chickenTikka'],
-    'nv-5': ['eggRice', 'fishCurry'],
-    'nv-6': ['chickenNaan', 'chicken65'],
-    'nv-7': ['chickenCurry', 'muttonBiryani'],
-    'nv-8': ['eggCurry', 'butterChicken'],
-    'nv-9': ['chickenRoll', 'prawnMasala'],
-    'nv-10': ['kebabPlatter', 'chickenBiryani'],
-    'nv-11': ['fishCurry', 'eggRice'],
-    'nv-12': ['chickenTikka', 'chickenNaan'],
-    'nv-13': ['muttonCurry', 'chicken65'],
-    'nv-14': ['butterChicken', 'chickenCurry'],
-    'nv-15': ['eggCurry', 'kebabPlatter']
+    '68691dc6f9a76470f5821901': ['butterChicken', 'eggCurry'],
+    '68691dc6f9a76470f5821902': ['chickenBiryani', 'kebabPlatter'],
+    '68691dc6f9a76470f5821903': ['muttonCurry', 'chickenRoll'],
+    '68691dc6f9a76470f5821904': ['prawnMasala', 'chickenTikka'],
+    '68691dc6f9a76470f5821905': ['eggRice', 'fishCurry'],
+    '68691dc6f9a76470f5821906': ['chickenNaan', 'chicken65'],
+    '68691dc6f9a76470f5821907': ['chickenCurry', 'muttonBiryani'],
+    '68691dc6f9a76470f5821908': ['eggCurry', 'butterChicken'],
+    '68691dc6f9a76470f5821909': ['chickenRoll', 'prawnMasala'],
+    '68691dc6f9a76470f582190a': ['kebabPlatter', 'chickenBiryani'],
+    '68691dc6f9a76470f582190b': ['fishCurry', 'eggRice'],
+    '68691dc6f9a76470f582190c': ['chickenTikka', 'chickenNaan'],
+    '68691dc6f9a76470f582190d': ['muttonCurry', 'chicken65'],
+    '68691dc6f9a76470f582190e': ['butterChicken', 'chickenCurry'],
+    '68691dc6f9a76470f582190f': ['eggCurry', 'kebabPlatter']
 };

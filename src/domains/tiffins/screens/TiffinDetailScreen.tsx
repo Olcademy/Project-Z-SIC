@@ -12,8 +12,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ImageCarousel } from '@/ui/components/ImageCarousel';
 
+import { orderedDishes } from "@/domains/tiffins/data/orderedDishes";
+import { recommendationsOrderedTogetherMap } from "@/domains/tiffins/data/recommendationsOrderedTogetherMap";
+
+import { manualTiffinImages } from '@/domains/tiffins/data/manualTiffinImages';
 import rotiImg from '../../../../assets/roti.png';
 import naanImg from '../../../../assets/naan.png';
+// import { addonItems } from '../data/orderedDishes';
 
 const PRIMARY = '#FF7A00';
 
@@ -31,7 +36,9 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
 
     const normalizedTiffin = (tiffin ?? paramItem) as TiffinDetail | undefined;
-
+    console.log('TIFFIN:', normalizedTiffin);
+    console.log('TIFFIN ID:', normalizedTiffin?._id);
+    console.log('TIFFIN NAME:', normalizedTiffin?.name);
     const [filters, setFilters] = useState<Record<FilterKey, boolean>>({
         budget: false,
         rating4: false,
@@ -52,29 +59,38 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const anyFilterActive = filters.budget || filters.rating4 || filters.pureVeg;
 
     const mostOrderedTogether = useMemo(() => {
-        return [
-            {
-                key: 'roti',
-                title: 'OG Roti',
-                subtitle: 'Whole wheat · fresh & soft',
-                description: 'Classic whole-wheat roti made fresh. Best with dal, sabzi, and gravies.',
-                price: 12,
-                rating: 4.6,
-                veg: true,
-                image: rotiImg,
-            },
-            {
-                key: 'nonVegNaan',
-                title: 'Non-veg naan',
-                subtitle: 'Tandoori naan · buttery finish',
-                description: 'Soft tandoori naan brushed with butter. A great pairing with rich non-veg curries.',
-                price: 28,
-                rating: 4.3,
-                veg: false,
-                image: naanImg,
-            },
-        ] as const;
-    }, []);
+
+        if (!normalizedTiffin) return [];
+        const ids = recommendationsOrderedTogetherMap[normalizedTiffin._id] ?? [];
+        
+        return ids.map(id => orderedDishes[id]);
+
+    }, [normalizedTiffin]);
+    // const mostOrderedTogether = useMemo(() => {
+        
+        // return [
+        //     {
+        //         key: 'roti',
+        //         title: 'OG Roti',
+        //         subtitle: 'Whole wheat · fresh & soft',
+        //         description: 'Classic whole-wheat roti made fresh. Best with dal, sabzi, and gravies.',
+        //         price: 12,
+        //         rating: 4.6,
+        //         veg: true,
+        //         image: rotiImg,
+        //     },
+        //     {
+        //         key: 'nonVegNaan',
+        //         title: 'Non-veg naan',
+        //         subtitle: 'Tandoori naan · buttery finish',
+        //         description: 'Soft tandoori naan brushed with butter. A great pairing with rich non-veg curries.',
+        //         price: 28,
+        //         rating: 4.3,
+        //         veg: false,
+        //         image: naanImg,
+        //     },
+        // ] as const;
+    // }, []);
 
     const recommendedForYou = useMemo(() => {
         const items = [
@@ -122,13 +138,20 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
     const images = useMemo(() => {
         if (!normalizedTiffin) return [];
-        const raw = [...(normalizedTiffin.images || [])].filter(Boolean) as string[];
-        if (raw.length > 0) {
-            return Array.from(new Set(raw));
-        }
-        const fallback = normalizedTiffin.imageUrl || (normalizedTiffin as any).image;
-        return fallback ? [String(fallback)] : [];
+
+        const raw = manualTiffinImages[normalizedTiffin._id] ?? [];
+        console.log('Raw images for tiffin ID', normalizedTiffin._id, ':', raw);
+        return raw.map(img => Image.resolveAssetSource(img).uri);
     }, [normalizedTiffin]);
+    // const images = useMemo(() => {
+    //     if (!normalizedTiffin) return [];
+    //     const raw = [...(normalizedTiffin.images || [])].filter(Boolean) as string[];
+    //     if (raw.length > 0) {
+    //         return Array.from(new Set(raw));
+    //     }
+    //     const fallback = normalizedTiffin.imageUrl || (normalizedTiffin as any).image;
+    //     return fallback ? [String(fallback)] : [];
+    // }, [normalizedTiffin]);
 
     const plans = useMemo(() => {
         if (!normalizedTiffin) return [];
@@ -221,6 +244,7 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                                 borderBottomRightRadius: 20,
                             }}
                         />
+                        
                     ) : (
                         <View style={{ height: 250, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>No image available</Text>

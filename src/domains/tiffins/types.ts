@@ -52,3 +52,14 @@ export interface TiffinDetail extends Tiffin {
         address?: string;
     };
 }
+
+export interface Dish {
+    key: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    price: number;
+    rating: number;
+    veg: boolean;
+    image: any; // or ImageSourcePropType (React Native)
+}

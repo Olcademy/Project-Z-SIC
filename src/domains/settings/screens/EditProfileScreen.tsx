@@ -22,6 +22,15 @@ const COUNTRY_CODES = [
     { code: '+91', label: '🇮🇳 India', flag: '🇮🇳' },
     { code: '+977', label: '🇳🇵 Nepal', flag: '🇳🇵' },
     { code: '+1', label: '🇺🇸 USA', flag: '🇺🇸' },
+    { code: '+1', label: '🇨🇦 Canada', flag: '🇨🇦' },
+    { code: '+44', label: '🇬🇧 UK', flag: '🇬🇧' },
+    { code: '+61', label: '🇦🇺 Australia', flag: '🇦🇺' },
+    { code: '+49', label: '🇩🇪 Germany', flag: '🇩🇪' },
+    { code: '+33', label: '🇫🇷 France', flag: '🇫🇷' },
+    { code: '+81', label: '🇯🇵 Japan', flag: '🇯🇵' },
+    { code: '+86', label: '🇨🇳 China', flag: '🇨🇳' },
+    { code: '+55', label: '🇧🇷 Brazil', flag: '🇧🇷' },
+    { code: '+27', label: '🇿🇦 South Africa', flag: '🇿🇦' },
 ];
 
 export const EditProfileScreen: React.FC = () => {

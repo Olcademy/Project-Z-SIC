@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions, Image, RefreshControl } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { TiffinStackParamList } from '@/app/navigation/types';
@@ -15,7 +15,7 @@ import { ImageCarousel } from '@/ui/components/ImageCarousel';
 import { orderedDishes } from "@/domains/tiffins/data/orderedDishes";
 import { recommendationsOrderedTogetherMap } from "@/domains/tiffins/data/recommendationsOrderedTogetherMap";
 
-import { manualTiffinImages } from '@/domains/tiffins/data/manualTiffinImages';
+import { logVegImagesIndexOnce, manualTiffinImages } from '@/domains/tiffins/data/manualTiffinImages';
 import rotiImg from '../../../../assets/roti.png';
 import naanImg from '../../../../assets/naan.png';
 // import { addonItems } from '../data/orderedDishes';
@@ -36,9 +36,12 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
 
     const normalizedTiffin = (tiffin ?? paramItem) as TiffinDetail | undefined;
-    console.log('TIFFIN:', normalizedTiffin);
-    console.log('TIFFIN ID:', normalizedTiffin?._id);
-    console.log('TIFFIN NAME:', normalizedTiffin?.name);
+
+    useEffect(() => {
+        // Only log when this screen is actually opened (i.e., after a card click)
+        // and only once per app session.
+        logVegImagesIndexOnce();
+    }, []);
     const [filters, setFilters] = useState<Record<FilterKey, boolean>>({
         budget: false,
         rating4: false,
@@ -140,7 +143,6 @@ export const TiffinDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         if (!normalizedTiffin) return [];
 
         const raw = manualTiffinImages[normalizedTiffin._id] ?? [];
-        console.log('Raw images for tiffin ID', normalizedTiffin._id, ':', raw);
         return raw.map(img => Image.resolveAssetSource(img).uri);
     }, [normalizedTiffin]);
     // const images = useMemo(() => {

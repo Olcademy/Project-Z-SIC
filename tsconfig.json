@@ -1,9 +1,11 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "module": "ESNext",
     "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],

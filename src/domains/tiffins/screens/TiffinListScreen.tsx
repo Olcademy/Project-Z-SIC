@@ -154,7 +154,6 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             if (effectiveVegOnly && !isVegTiffin(item)) return false;
             if (topRated && getRatingValue(item) < 4.0) return false;
             if (hasOffers && !hasAnyOffer(item)) return false;
-            console.log(item._id);
             return true;
         });
 

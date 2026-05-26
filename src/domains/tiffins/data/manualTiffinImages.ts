@@ -3,7 +3,13 @@ import { nonVegImagesIndex } from '../../../../assets/nonVegImages/index';
 import rotiImg from '../../../../assets/roti.png';
 import naanImg from '../../../../assets/naan.png';
 
-console.log('vegImagesIndex:', vegImagesIndex);
+let didLogVegImagesIndex = false;
+
+export const logVegImagesIndexOnce = () => {
+    if (didLogVegImagesIndex) return;
+    didLogVegImagesIndex = true;
+    console.log('OG vegImagesIndex:', vegImagesIndex);
+};
 
 export const manualTiffinImages: Record<string, any[]> = {
     // Veg tiffins

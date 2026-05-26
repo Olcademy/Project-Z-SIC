@@ -2,6 +2,14 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "tsconfig.json"
+      ],
+      "url": "https://json.schemastore.org/tsconfig"
+    }
+  ],
   "typescript.tsserver.exclude": [
     "**/node_modules/**",
     "**/src/modules/**",

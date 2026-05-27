@@ -358,7 +358,7 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                     </View>
                 </View>
 
-                {/* INFO (below image) */}
+                {/* INFO */}
                 <View style={styles.sectionPad}>
                     <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
@@ -384,9 +384,7 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                         contentContainerStyle={{ paddingRight: 16, paddingVertical: 2, alignItems: 'center' }}
                     >
                         <Pressable
-                            onPress={() => {
-                                if (anyFilterActive) clearFilters();
-                            }}
+                            onPress={() => { if (anyFilterActive) clearFilters(); }}
                             style={[styles.chip, anyFilterActive ? styles.chipActive : null]}
                         >
                             <Text style={[styles.chipText, anyFilterActive ? styles.chipTextActive : null]}>Filters</Text>
@@ -424,24 +422,20 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                             return (
                                 <View key={row.key} style={styles.motRow}>
                                     <Image source={row.image} style={styles.motImage} />
-
                                     <View style={styles.motRight}>
                                         <Text style={styles.motTitle} numberOfLines={1}>{row.title}</Text>
-                                        <Text style={styles.motSubtitle} numberOfLines={1}>Pizza · 8” · small</Text>
+                                        <Text style={styles.motSubtitle} numberOfLines={1}>Pizza · 8" · small</Text>
                                         <Text style={styles.motDesc} numberOfLines={2}>
                                             Tortillas (distinct from tostada shells) stacked with a layer of refried beans and seasoned ground beef in between.
                                         </Text>
-
                                         <View style={styles.motMetaRow}>
                                             <Text style={styles.motPrice}>$12.89</Text>
                                             <Text style={styles.motDiscount}>20% OFF</Text>
                                         </View>
                                     </View>
-
                                     <View style={[styles.vegBadge, { borderColor: badgeColor }]}>
                                         <View style={[styles.vegDot, { backgroundColor: badgeColor }]} />
                                     </View>
-
                                     {index < mostOrderedTogether.length - 1 ? <View style={styles.motDivider} /> : null}
                                 </View>
                             );
@@ -473,7 +467,6 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                         const children = accordionSections.filter((s) => s.title !== 'Recommended for you');
                         const isRecommendedOpen = Boolean(expanded['Recommended for you']);
 
-                        // If we don't have the section for some reason, fall back to rendering nothing.
                         if (!recommended) return null;
 
                         return (
@@ -545,320 +538,54 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
 };
 
 const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        backgroundColor: BG,
-    },
-
-    heroWrap: {
-        backgroundColor: '#FFFFFF',
-    },
-    heroImageWrap: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        overflow: 'hidden',
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-    },
-    heroImage: {
-        backgroundColor: '#FFFFFF',
-        width: Dimensions.get('window').width,
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-    },
-    heroFallback: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    heroFallbackText: {
-        color: TEXT_MUTED,
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    backBtn: {
-        position: 'absolute',
-        left: 16,
-        height: 40,
-        width: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-    },
-    heroOverlayRow: {
-        position: 'absolute',
-        left: 16,
-        right: 16,
-        bottom: 14,
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-    },
-    heroTitle: {
-        color: '#FFFFFF',
-        fontSize: 22,
-        fontWeight: '800',
-        textShadowColor: 'rgba(0,0,0,0.25)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 6,
-    },
-    ratingPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: RATING_GREEN,
-    },
-    ratingText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: '800',
-    },
-
-    sectionPad: {
-        paddingHorizontal: 16,
-        paddingTop: 14,
-    },
-
-    infoRow: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-    },
-    infoItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    infoIcon: {
-        marginRight: 8,
-    },
-    infoText: {
-        color: TEXT_MUTED,
-        fontSize: 13,
-        fontWeight: '600',
-        flex: 1,
-    },
-
-    chip: {
-        borderWidth: 1,
-        borderColor: PRIMARY,
-        borderRadius: 999,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        marginRight: 10,
-        backgroundColor: '#FFFFFF',
-    },
-    chipActive: {
-        backgroundColor: PRIMARY,
-    },
-    chipText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: PRIMARY,
-    },
-    chipTextActive: {
-        color: '#FFFFFF',
-    },
-
-    stickyWrap: {
-        backgroundColor: BG,
-        paddingHorizontal: 16,
-        paddingTop: 10,
-        paddingBottom: 12,
-    },
-    orderNowBtn: {
-        width: '100%',
-        height: 48,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#E0E0E0',
-    },
-    orderNowText: {
-        fontSize: 15,
-        fontWeight: '800',
-        color: TEXT,
-    },
-    orderDisabledNote: {
-        marginTop: 8,
-        fontSize: 12,
-        fontWeight: '600',
-        color: TEXT_MUTED,
-    },
-
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: TEXT,
-        marginBottom: 10,
-    },
-
-    motListCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 2,
-    },
-    motRow: {
-        position: 'relative',
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        minHeight: 116,
-    },
-    motImage: {
-        width: 92,
-        height: 92,
-        borderRadius: 12,
-        backgroundColor: '#F3F4F6',
-    },
-    motRight: {
-        flex: 1,
-        paddingLeft: 12,
-        paddingRight: 34,
-    },
-    motTitle: {
-        fontSize: 15,
-        fontWeight: '800',
-        color: TEXT,
-    },
-    motSubtitle: {
-        marginTop: 4,
-        fontSize: 12,
-        fontWeight: '700',
-        color: TEXT,
-    },
-    motDesc: {
-        marginTop: 6,
-        fontSize: 12,
-        fontWeight: '600',
-        lineHeight: 17,
-        color: TEXT_MUTED,
-    },
-    motMetaRow: {
-        marginTop: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    motPrice: {
-        fontSize: 14,
-        fontWeight: '900',
-        color: TEXT,
-    },
-    motDiscount: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: TEXT_MUTED,
-    },
-    vegBadge: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        width: 14,
-        height: 14,
-        borderRadius: 2,
-        borderWidth: 1.6,
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    vegDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-    },
-    motDivider: {
-        position: 'absolute',
-        left: 12,
-        right: 12,
-        bottom: 0,
-        height: 1,
-        backgroundColor: '#EEEEEE',
-    },
-
-    accordionWrap: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        marginBottom: 12,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: 1,
-    },
-    accordionHeader: {
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    accordionTitle: {
-        fontSize: 15,
-        fontWeight: '800',
-        color: TEXT,
-    },
-    accordionBody: {
-        paddingHorizontal: 14,
-        paddingBottom: 10,
-    },
-    recommendedBody: {
-        paddingHorizontal: 14,
-        paddingBottom: 12,
-    },
-    nestedAccordionWrap: {
-        marginTop: 10,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
-    },
-    emptyItems: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: TEXT_MUTED,
-        paddingVertical: 10,
-    },
-    menuRow: {
-        paddingVertical: 12,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-    },
-    menuRowBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
-    },
-    menuName: {
-        fontSize: 14,
-        fontWeight: '800',
-        color: TEXT,
-    },
-    menuDesc: {
-        marginTop: 4,
-        fontSize: 12,
-        fontWeight: '600',
-        lineHeight: 17,
-        color: TEXT_MUTED,
-    },
-    menuPrice: {
-        fontSize: 13,
-        fontWeight: '800',
-        color: TEXT,
-    },
+    screen: { flex: 1, backgroundColor: BG },
+    heroWrap: { backgroundColor: '#FFFFFF' },
+    heroImageWrap: { width: '100%', backgroundColor: '#FFFFFF', overflow: 'hidden', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+    heroImage: { backgroundColor: '#FFFFFF', width: Dimensions.get('window').width, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+    heroFallback: { width: '100%', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+    heroFallbackText: { color: TEXT_MUTED, fontSize: 13, fontWeight: '600' },
+    backBtn: { position: 'absolute', left: 16, height: 40, width: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E0E0' },
+    heroOverlayRow: { position: 'absolute', left: 16, right: 16, bottom: 14, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+    heroTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.25)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+    ratingPill: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: RATING_GREEN },
+    ratingText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+    sectionPad: { paddingHorizontal: 16, paddingTop: 14 },
+    infoRow: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12 },
+    infoItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    infoIcon: { marginRight: 8 },
+    infoText: { color: TEXT_MUTED, fontSize: 13, fontWeight: '600', flex: 1 },
+    chip: { borderWidth: 1, borderColor: PRIMARY, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, marginRight: 10, backgroundColor: '#FFFFFF' },
+    chipActive: { backgroundColor: PRIMARY },
+    chipText: { fontSize: 13, fontWeight: '700', color: PRIMARY },
+    chipTextActive: { color: '#FFFFFF' },
+    stickyWrap: { backgroundColor: BG, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12 },
+    orderNowBtn: { width: '100%', height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E0E0E0' },
+    orderNowText: { fontSize: 15, fontWeight: '800', color: TEXT },
+    orderDisabledNote: { marginTop: 8, fontSize: 12, fontWeight: '600', color: TEXT_MUTED },
+    sectionTitle: { fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 10 },
+    motListCard: { backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+    motRow: { position: 'relative', flexDirection: 'row', alignItems: 'center', padding: 12, minHeight: 116 },
+    motImage: { width: 92, height: 92, borderRadius: 12, backgroundColor: '#F3F4F6' },
+    motRight: { flex: 1, paddingLeft: 12, paddingRight: 34 },
+    motTitle: { fontSize: 15, fontWeight: '800', color: TEXT },
+    motSubtitle: { marginTop: 4, fontSize: 12, fontWeight: '700', color: TEXT },
+    motDesc: { marginTop: 6, fontSize: 12, fontWeight: '600', lineHeight: 17, color: TEXT_MUTED },
+    motMetaRow: { marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    motPrice: { fontSize: 14, fontWeight: '900', color: TEXT },
+    motDiscount: { fontSize: 12, fontWeight: '700', color: TEXT_MUTED },
+    vegBadge: { position: 'absolute', top: 12, right: 12, width: 14, height: 14, borderRadius: 2, borderWidth: 1.6, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+    vegDot: { width: 7, height: 7, borderRadius: 3.5 },
+    motDivider: { position: 'absolute', left: 12, right: 12, bottom: 0, height: 1, backgroundColor: '#EEEEEE' },
+    accordionWrap: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+    accordionHeader: { paddingHorizontal: 14, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    accordionTitle: { fontSize: 15, fontWeight: '800', color: TEXT },
+    accordionBody: { paddingHorizontal: 14, paddingBottom: 10 },
+    recommendedBody: { paddingHorizontal: 14, paddingBottom: 12 },
+    nestedAccordionWrap: { marginTop: 10, backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#EEEEEE' },
+    emptyItems: { fontSize: 12, fontWeight: '600', color: TEXT_MUTED, paddingVertical: 10 },
+    menuRow: { paddingVertical: 12, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    menuRowBorder: { borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
+    menuName: { fontSize: 14, fontWeight: '800', color: TEXT },
+    menuDesc: { marginTop: 4, fontSize: 12, fontWeight: '600', lineHeight: 17, color: TEXT_MUTED },
+    menuPrice: { fontSize: 13, fontWeight: '800', color: TEXT },
 });

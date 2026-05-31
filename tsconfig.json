@@ -5,8 +5,9 @@
     "strict": true,
     "module": "ESNext",
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+
     "paths": {
       "@/*": ["src/*"],
       "@/app/*": ["src/app/*"],
@@ -20,6 +21,7 @@
       "@/types/*": ["src/types/*"]
     }
   },
+
   "include": [
     "App.tsx",
     "index.ts",
@@ -28,6 +30,7 @@
     "src/**/*.d.ts",
     "nativewind-env.d.ts"
   ],
+
   "exclude": [
     "node_modules",
     "dist",

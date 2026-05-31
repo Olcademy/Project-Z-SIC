@@ -16,6 +16,7 @@ import { FaqScreen } from '@/domains/settings/screens/FaqScreen';
 import { ContactSupportScreen } from '@/domains/settings/screens/ContactSupportScreen';
 import { PrivacyPolicyScreen } from '@/domains/settings/screens/PrivacyPolicyScreen';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
     EventsStackParamList,
     MainTabsParamList,
@@ -29,9 +30,6 @@ const RestaurantsStack = createNativeStackNavigator<RestaurantsStackParamList>()
 const TiffinStack = createNativeStackNavigator<TiffinStackParamList>();
 const EventsStack = createNativeStackNavigator<EventsStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
-
-const RESTAURANTS_ACTIVE_ICON = '#FF7A00';
-const TIFFIN_ACTIVE_ICON = '#FF7A00';
 
 const RestaurantsStackNavigator = () => (
     <RestaurantsStack.Navigator screenOptions={{ headerShown: false }}>
@@ -68,6 +66,8 @@ const SettingsStackNavigator = () => (
 );
 
 export const TabsNavigator = () => {
+    const insets = useSafeAreaInsets();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -76,18 +76,18 @@ export const TabsNavigator = () => {
                     backgroundColor: '#ffffff',
                     borderTopColor: '#f3f4f6',
                     borderTopWidth: 1,
-                    height: 100,
-                    paddingBottom: 40,
-                    paddingTop: 12,
+                    height: 52 + insets.bottom,
+                    paddingBottom: insets.bottom || 8,
+                    paddingTop: 8,
                 },
                 tabBarActiveTintColor: '#FF7A00',
                 tabBarInactiveTintColor: '#6b7280',
                 tabBarLabelStyle: {
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: '600',
-                    marginTop: 4,
+                    marginTop: 2,
                 },
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused, color }) => {
                     const icons: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
                         RestaurantsStack: { active: 'restaurant', inactive: 'restaurant-outline' },
                         TiffinStack: { active: 'fast-food', inactive: 'fast-food-outline' },

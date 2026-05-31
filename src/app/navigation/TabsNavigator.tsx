@@ -67,6 +67,7 @@ const SettingsStackNavigator = () => (
 
 export const TabsNavigator = () => {
     const insets = useSafeAreaInsets();
+    const bottomInset = Math.max(insets.bottom, 10);
 
     return (
         <Tab.Navigator
@@ -76,8 +77,8 @@ export const TabsNavigator = () => {
                     backgroundColor: '#ffffff',
                     borderTopColor: '#f3f4f6',
                     borderTopWidth: 1,
-                    height: 52 + insets.bottom,
-                    paddingBottom: insets.bottom || 8,
+                    height: 52 + bottomInset,
+                    paddingBottom: bottomInset,
                     paddingTop: 8,
                 },
                 tabBarActiveTintColor: '#FF7A00',

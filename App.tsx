@@ -12,6 +12,7 @@ import { store } from '@/store/store';
 import { OfflineBanner } from '@/ui/components/OfflineBanner';
 import { useAppSelector } from '@/hooks/useAppStore';
 import './global.css';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { UserProvider } from '@/ui/context/UserContext';
 
@@ -46,7 +47,9 @@ export default function App() {
   return (
     <Provider store={store}>
       <UserProvider>
-        <AppShell />
+        <SafeAreaProvider>
+          <AppShell />
+        </SafeAreaProvider>
       </UserProvider>
     </Provider>
   );

@@ -149,5 +149,54 @@ export const recommendationsOrderedTogetherMap: Record<string, string[]> = {
     '68691dc6f9a76470f582190c': ['chickenTikka', 'chickenNaan'],
     '68691dc6f9a76470f582190d': ['muttonCurry', 'chicken65'],
     '68691dc6f9a76470f582190e': ['butterChicken', 'chickenCurry'],
-    '68691dc6f9a76470f582190f': ['eggCurry', 'kebabPlatter']
+    '68691dc6f9a76470f582190f': ['eggCurry', 'kebabPlatter'],
+
+
+    '692e919ab8ede7f19e30439f': ['eggCurry', 'kebabPlatter'],
+    '68691dd3f9a76470f58223c6': ['eggCurry', 'kebabPlatter'],
+    '68691dd2f9a76470f582226a': ['chickenNaan', 'chicken65'],
+    '68691dd2f9a76470f582234e': ['muttonCurry', 'chickenRoll'],
+    '68691dd3f9a76470f582248a': ['butterChicken', 'eggCurry'],
+    '68691dd3f9a76470f582246c': ['chickenBiryani', 'kebabPlatter'],
+    '68691dd3f9a76470f582241f': ['muttonCurry', 'chickenRoll'],
+    '68691dd3f9a76470f582247e': ['prawnMasala', 'chickenTikka'],
+    '68691dd2f9a76470f5822250': ['eggRice', 'fishCurry'],
+    '68691dd2f9a76470f582229e': ['chickenNaan', 'chicken65'],
+    '68691dd3f9a76470f58223ae': ['chickenCurry', 'muttonBiryani'],
+    '68691dd2f9a76470f5822284': ['eggCurry', 'butterChicken'],
+    '68691dd3f9a76470f5822450': ['chickenRoll', 'prawnMasala'],
+    '68691dd2f9a76470f5822306': ['kebabPlatter', 'chickenBiryani'],
+    '68691dd3f9a76470f58223fa': ['fishCurry', 'eggRice'],
+    '68691dd3f9a76470f58223e0': ['chickenTikka', 'chickenNaan'],
+    '686a6c4c7cb57c4d4ae2bce9': ['muttonCurry', 'chicken65'],
+    '686ba940d06317264b336e5e': ['butterChicken', 'chickenCurry'],
+    '686babf3d06317264b3370dd': ['eggCurry', 'kebabPlatter'],
+    '686badccd06317264b337341': ['chickenBiryani', 'fishCurry'],
+    '6872c44dfc7e50af2cb39b98': ['chickenTikka', 'eggCurry'],
+    '6883b089ae142968f76c16ce': ['muttonBiryani', 'chickenRoll'],
+    '68b155b06479e028d3cb5ca0': ['prawnMasala', 'butterChicken'],
+    '68b155b06479e028d3cb5ca8': ['chicken65', 'eggRice'],
+    '68b155db6479e028d3cb5cb9': ['kebabPlatter', 'chickenCurry'],
+
+    '68b1de32bd085c6cda444b2b': ['chickenNaan', 'muttonCurry'],
+    '68b1de40bd085c6cda444b3c': ['chickenTikka', 'prawnMasala'],
+    '68b2a405645d2d5f06a56191': ['fishCurry', 'butterChicken'],
+    '68b2a40f645d2d5f06a5619c': ['eggCurry', 'chickenBiryani'],
+    '68b2a43d645d2d5f06a561a4': ['chickenRoll', 'kebabPlatter'],
+    '68b2a52d645d2d5f06a564ee': ['eggRice', 'chicken65'],
+
+    '68b3f4254cc02d638553c3b1': ['chickenCurry', 'muttonBiryani'],
+    '68b3f4264cc02d638553c3c0': ['butterChicken', 'chickenNaan'],
+    '68b3f42f4cc02d638553c4de': ['prawnMasala', 'fishCurry'],
+
+    '68b3f4cd4cc02d638553c4f8': ['eggRice', 'chickenTikka'],
+    '686ba939d06317264b336e56': ['muttonCurry', 'eggCurry'],
+    // '68691dcef9a76470f5821e9c': ['chickenBiryani', 'chickenRoll'],
+    // '68691dcef9a76470f5821ec6': ['butterChicken', 'prawnMasala'],
+    // '68691dcef9a76470f5821ee6': ['chicken65', 'kebabPlatter'],
+    // '68691dcef9a76470f5821f06': ['fishCurry', 'chickenNaan'],
+
+
+
+
 };

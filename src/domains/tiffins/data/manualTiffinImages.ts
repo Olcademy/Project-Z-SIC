@@ -792,5 +792,257 @@ export const manualTiffinImages: Record<string, any[]> = {
         nonVegImagesIndex.imgnv59,
         nonVegImagesIndex.imgnv60,
     ],
+
+    '692e919ab8ede7f19e30439f': [
+        nonVegImagesIndex.imgnv56,
+        nonVegImagesIndex.imgnv57,
+        nonVegImagesIndex.imgnv58,
+        nonVegImagesIndex.imgnv59,
+        nonVegImagesIndex.imgnv60,
+    ],
+    '68691dd3f9a76470f58223c6': [
+        nonVegImagesIndex.imgnv51,
+        nonVegImagesIndex.imgnv52,
+        nonVegImagesIndex.imgnv53,
+        nonVegImagesIndex.imgnv54,
+        nonVegImagesIndex.imgnv60,
+    ],
+    '68691dd2f9a76470f582226a': [
+        nonVegImagesIndex.imgnv36,
+        nonVegImagesIndex.imgnv37,
+        nonVegImagesIndex.imgnv38,
+        nonVegImagesIndex.imgnv39,
+        nonVegImagesIndex.imgnv50,
+    ],
+    '68691dd2f9a76470f582234e': [
+        nonVegImagesIndex.imgnv18,
+        nonVegImagesIndex.imgnv19,
+        nonVegImagesIndex.imgnv20,
+        nonVegImagesIndex.imgnv33,
+        nonVegImagesIndex.imgnv34,
+    ],
+
+    '68691dd3f9a76470f582248a': [
+        nonVegImagesIndex.imgnv70,
+        nonVegImagesIndex.imgnv27,
+        nonVegImagesIndex.imgnv54,
+        nonVegImagesIndex.imgnv19,
+    ],
+
+    '68691dd3f9a76470f582246c': [
+        nonVegImagesIndex.imgnv85,
+        nonVegImagesIndex.imgnv3,
+        nonVegImagesIndex.imgnv62,
+        nonVegImagesIndex.imgnv90,
+    ],
+
+    '68691dd3f9a76470f582241f': [
+        nonVegImagesIndex.imgnv42,
+        nonVegImagesIndex.imgnv75,
+        nonVegImagesIndex.imgnv16,
+        nonVegImagesIndex.imgnv98,
+    ],
+
+    '68691dd3f9a76470f582247e': [
+        nonVegImagesIndex.imgnv1,
+        nonVegImagesIndex.imgnv2,
+        nonVegImagesIndex.imgnv3,
+        nonVegImagesIndex.imgnv4,
+        nonVegImagesIndex.imgnv5,
+    ],
+    '68691dd2f9a76470f5822250': [
+        nonVegImagesIndex.imgnv5,
+        nonVegImagesIndex.imgnv6,
+        nonVegImagesIndex.imgnv7,
+        nonVegImagesIndex.imgnv8,
+        nonVegImagesIndex.imgnv9,
+    ],
+    '68691dd2f9a76470f582229e': [
+        nonVegImagesIndex.imgnv10,
+        nonVegImagesIndex.imgnv11,
+        nonVegImagesIndex.imgnv12,
+        nonVegImagesIndex.imgnv13,
+        nonVegImagesIndex.imgnv14,
+    ],
+    '68691dd3f9a76470f58223ae': [
+        nonVegImagesIndex.imgnv14,
+        nonVegImagesIndex.imgnv15,
+        nonVegImagesIndex.imgnv16,
+        nonVegImagesIndex.imgnv17,
+    ],
+    '68691dd2f9a76470f5822284': [
+        nonVegImagesIndex.imgnv18,
+        nonVegImagesIndex.imgnv19,
+        nonVegImagesIndex.imgnv20,
+        nonVegImagesIndex.imgnv33,
+        nonVegImagesIndex.imgnv34,
+    ],
     
+    '68691dd3f9a76470f5822450': [
+        nonVegImagesIndex.imgnv43,
+        nonVegImagesIndex.imgnv99,
+        nonVegImagesIndex.imgnv16,
+        nonVegImagesIndex.imgnv71,
+    ],
+
+    '68691dd2f9a76470f5822306': [
+        nonVegImagesIndex.imgnv1,
+        nonVegImagesIndex.imgnv78,
+        nonVegImagesIndex.imgnv35,
+        nonVegImagesIndex.imgnv62,
+    ],
+
+    '68691dd3f9a76470f58223fa': [
+        nonVegImagesIndex.imgnv48,
+        nonVegImagesIndex.imgnv23,
+        nonVegImagesIndex.imgnv96,
+        nonVegImagesIndex.imgnv19,
+    ],
+
+    '68691dd3f9a76470f58223e0': [
+        nonVegImagesIndex.imgnv32,
+        nonVegImagesIndex.imgnv74,
+        nonVegImagesIndex.imgnv56,
+        nonVegImagesIndex.imgnv11,
+    ],
+
+    '686a6c4c7cb57c4d4ae2bce9': [
+        nonVegImagesIndex.imgnv83,
+        nonVegImagesIndex.imgnv28,
+        nonVegImagesIndex.imgnv45,
+        nonVegImagesIndex.imgnv65,
+    ],
+
+    '686ba939d06317264b336e56': [
+        nonVegImagesIndex.imgnv94,
+        nonVegImagesIndex.imgnv37,
+        nonVegImagesIndex.imgnv50,
+        nonVegImagesIndex.imgnv14,
+    ],
+
+    '686ba940d06317264b336e5e': [
+        nonVegImagesIndex.imgnv80,
+        nonVegImagesIndex.imgnv24,
+        nonVegImagesIndex.imgnv68,
+        nonVegImagesIndex.imgnv3,
+    ],
+
+    '686babf3d06317264b3370dd': [
+        nonVegImagesIndex.imgnv72,
+        nonVegImagesIndex.imgnv97,
+        nonVegImagesIndex.imgnv40,
+        nonVegImagesIndex.imgnv6,
+    ],
+
+    '686badccd06317264b337341': [
+        nonVegImagesIndex.imgnv53,
+        nonVegImagesIndex.imgnv82,
+        nonVegImagesIndex.imgnv30,
+        nonVegImagesIndex.imgnv98,
+    ],
+
+    '6872c44dfc7e50af2cb39b98': [
+        nonVegImagesIndex.imgnv9,
+        nonVegImagesIndex.imgnv63,
+        nonVegImagesIndex.imgnv75,
+        nonVegImagesIndex.imgnv17,
+    ],
+
+    '6883b089ae142968f76c16ce': [
+        nonVegImagesIndex.imgnv17,
+        nonVegImagesIndex.imgnv3,
+        nonVegImagesIndex.imgnv91,
+        nonVegImagesIndex.imgnv42,
+    ],
+
+    '68b155b06479e028d3cb5ca0': [
+        nonVegImagesIndex.imgnv8,
+        nonVegImagesIndex.imgnv55,
+        nonVegImagesIndex.imgnv12,
+        nonVegImagesIndex.imgnv73,
+    ],
+
+    '68b155b06479e028d3cb5ca8': [
+        nonVegImagesIndex.imgnv29,
+        nonVegImagesIndex.imgnv64,
+        nonVegImagesIndex.imgnv6,
+        nonVegImagesIndex.imgnv88,
+    ],
+
+    '68b155db6479e028d3cb5cb9': [
+        nonVegImagesIndex.imgnv14,
+        nonVegImagesIndex.imgnv47,
+        nonVegImagesIndex.imgnv33,
+        nonVegImagesIndex.imgnv2,
+    ],
+
+    '68b1de32bd085c6cda444b2b': [
+        nonVegImagesIndex.imgnv70,
+        nonVegImagesIndex.imgnv9,
+        nonVegImagesIndex.imgnv81,
+        nonVegImagesIndex.imgnv25,
+    ],
+
+    '68b1de40bd085c6cda444b3c': [
+        nonVegImagesIndex.imgnv60,
+        nonVegImagesIndex.imgnv18,
+        nonVegImagesIndex.imgnv92,
+        nonVegImagesIndex.imgnv41,
+    ],
+
+    '68b2a405645d2d5f06a56191': [
+        nonVegImagesIndex.imgnv11,
+        nonVegImagesIndex.imgnv76,
+        nonVegImagesIndex.imgnv38,
+        nonVegImagesIndex.imgnv57,
+    ],
+
+    '68b2a40f645d2d5f06a5619c': [
+        nonVegImagesIndex.imgnv22,
+        nonVegImagesIndex.imgnv85,
+        nonVegImagesIndex.imgnv4,
+        nonVegImagesIndex.imgnv66,
+    ],
+
+    '68b2a43d645d2d5f06a561a4': [
+        nonVegImagesIndex.imgnv31,
+        nonVegImagesIndex.imgnv93,
+        nonVegImagesIndex.imgnv15,
+        nonVegImagesIndex.imgnv49,
+    ],
+
+    '68b2a52d645d2d5f06a564ee': [
+        nonVegImagesIndex.imgnv58,
+        nonVegImagesIndex.imgnv7,
+        nonVegImagesIndex.imgnv90,
+        nonVegImagesIndex.imgnv26,
+    ],
+
+    '68b3f4254cc02d638553c3b1': [
+        nonVegImagesIndex.imgnv44,
+        nonVegImagesIndex.imgnv13,
+        nonVegImagesIndex.imgnv79,
+        nonVegImagesIndex.imgnv34,
+    ],
+
+    '68b3f4264cc02d638553c3c0': [
+        nonVegImagesIndex.imgnv20,
+        nonVegImagesIndex.imgnv61,
+        nonVegImagesIndex.imgnv5,
+        nonVegImagesIndex.imgnv87,
+    ],
+
+    '68b3f42f4cc02d638553c4de': [
+        nonVegImagesIndex.imgnv95,
+        nonVegImagesIndex.imgnv27,
+        nonVegImagesIndex.imgnv10,
+        nonVegImagesIndex.imgnv52,
+    ],
+
+    '68b3f4cd4cc02d638553c4f8': [
+        nonVegImagesIndex.imgnv36,
+        nonVegImagesIndex.imgnv84,
+        nonVegImagesIndex.imgnv21,
+        nonVegImagesIndex.imgnv67,
+    ],
 };

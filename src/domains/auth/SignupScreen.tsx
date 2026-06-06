@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/app/navigation/types';
 import { apiClient } from '@/platform/api/client';
 import { useAppSelector } from '@/hooks/useAppStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
  type Props = NativeStackScreenProps<RootStackParamList, 'Signup'>;
 
@@ -53,28 +54,66 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
         setIsLoading(true);
         setErrorMessage(null);
+        
         try {
-            const response = await apiClient.post('/api/signup', {
-                username: form.username.trim(),
-                email,
-                password: form.password,
-            });
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-            if (response.data?.success === false) {
-                setErrorMessage(response.data?.message || 'Signup failed.');
-                return;
-            }
+            // await AsyncStorage.setItem(
+            //     'user',
+            //     JSON.stringify({
+            //         username: form.username.trim(),
+            //         email,
+            //         password: form.password,
+            //     })
+            // );
+
+            await AsyncStorage.setItem(
+                'pendingUser',
+                JSON.stringify({
+                    username: form.username.trim(),
+                    email,
+                    password: form.password,
+                })
+            );
+            
+            await AsyncStorage.setItem('otp', otp);
+
+            alert(`OTP: ${otp}`);
 
             navigation.navigate('Otp', {
                 email,
                 password: form.password,
                 username: form.username.trim(),
             });
-        } catch (error: any) {
-            setErrorMessage(error?.response?.data?.message || 'Signup failed.');
+        } catch (error) {
+            setErrorMessage('Failed to save user data.');
         } finally {
             setIsLoading(false);
         }
+
+        // try {
+        //     const response = await apiClient.post('/api/signup', {
+        //         username: form.username.trim(),
+        //         email,
+        //         password: form.password,
+        //     });
+
+        //     if (response.data?.success === false) {
+        //         setErrorMessage(response.data?.message || 'Signup failed.');
+        //         return;
+        //     }
+
+        //     navigation.navigate('Otp', {
+        //         email,
+        //         password: form.password,
+        //         username: form.username.trim(),
+        //     });
+        // } catch (error: any) {
+        //     setErrorMessage(error?.response?.data?.message || 'Signup failed.');
+        // } finally {
+        //     setIsLoading(false);
+        // }
+
     };
 
     return (

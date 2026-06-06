@@ -9,6 +9,7 @@ import { useAppSelector } from '@/hooks/useAppStore';
 import { useUser } from '@/ui/context/UserContext';
 import { setUserAuthToken } from '@/platform/auth/token';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -71,49 +72,80 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
         setIsLoading(true);
         setErrorMessage(null);
-        try {
-            const response = await apiClient.post('/api/login', {
-                email: form.email.trim().toLowerCase(),
-                password: form.password,
-                rememberMe,
-            });
+        // try {
+        //     const response = await apiClient.post('/api/login', {
+        //         email: form.email.trim().toLowerCase(),
+        //         password: form.password,
+        //         rememberMe,
+        //     });
 
-            if (response.data?.success || response.data?.message === 'Login successful!') {
-                const token = response.data?.token || response.data?.data?.token;
-                await setUserAuthToken(token, { persist: rememberMe });
+        //     if (response.data?.success || response.data?.message === 'Login successful!') {
+        //         const token = response.data?.token || response.data?.data?.token;
+        //         await setUserAuthToken(token, { persist: rememberMe });
 
-                const derivedName = form.email
-                    .split('@')[0]
-                    .replace(/[^a-zA-Z0-9]/g, ' ')
-                    .replace(/\b\w/g, (c) => c.toUpperCase())
-                    .trim();
-                const userData = response.data.user || {
-                    name: derivedName,
-                    email: form.email,
-                    phone: '',
-                    location: 'India'
-                };
+        //         const derivedName = form.email
+        //             .split('@')[0]
+        //             .replace(/[^a-zA-Z0-9]/g, ' ')
+        //             .replace(/\b\w/g, (c) => c.toUpperCase())
+        //             .trim();
+        //         const userData = response.data.user || {
+        //             name: derivedName,
+        //             email: form.email,
+        //             phone: '',
+        //             location: 'India'
+        //         };
                 
-                // Fallback if backend user object is missing a name
-                if (!userData.name || userData.name.trim() === '') {
-                    userData.name = derivedName;
-                }
+        //         // Fallback if backend user object is missing a name
+        //         if (!userData.name || userData.name.trim() === '') {
+        //             userData.name = derivedName;
+        //         }
 
-                await login(userData, { rememberMe });
+        //         await login(userData, { rememberMe });
+        //         return;
+        //     }
+
+        //     setErrorMessage(response.data?.message || 'Login failed.');
+        // } catch (error: any) {
+        //     const code = error?.code;
+        //     const msg = String(error?.message || '');
+        //     if (code === 'ECONNABORTED' || msg.toLowerCase().includes('timeout')) {
+        //         setErrorMessage('Login is taking too long. Please try again in a moment.');
+        //     } else if (msg.toLowerCase().includes('network error')) {
+        //         setErrorMessage('Network error. Check your internet and API base URL, then try again.');
+        //     } else {
+        //         setErrorMessage(error?.response?.data?.message || 'Login failed.');
+        //     }
+        // } finally {
+        //     setIsLoading(false);
+        // }
+         try {
+            console.log('loading');
+            const storedUser = await AsyncStorage.getItem('user');
+
+            if (!storedUser) {
+                setErrorMessage('No account found. Please sign up first.');
                 return;
             }
 
-            setErrorMessage(response.data?.message || 'Login failed.');
-        } catch (error: any) {
-            const code = error?.code;
-            const msg = String(error?.message || '');
-            if (code === 'ECONNABORTED' || msg.toLowerCase().includes('timeout')) {
-                setErrorMessage('Login is taking too long. Please try again in a moment.');
-            } else if (msg.toLowerCase().includes('network error')) {
-                setErrorMessage('Network error. Check your internet and API base URL, then try again.');
-            } else {
-                setErrorMessage(error?.response?.data?.message || 'Login failed.');
+            const user = JSON.parse(storedUser);
+
+            if (user.email.toLowerCase() !== form.email.trim().toLowerCase() || user.password !== form.password) {
+                setErrorMessage('Invalid email or password.');
+                return;
             }
+
+            await login(
+                {
+                    name: user.username,
+                    email: user.email,
+                    phone: '',
+                    location: 'India',
+                },
+                { rememberMe }
+            );
+
+        } catch (error) {
+            setErrorMessage('Login failed.');
         } finally {
             setIsLoading(false);
         }

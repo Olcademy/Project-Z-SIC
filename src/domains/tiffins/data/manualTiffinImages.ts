@@ -8,7 +8,6 @@ let didLogVegImagesIndex = false;
 export const logVegImagesIndexOnce = () => {
     if (didLogVegImagesIndex) return;
     didLogVegImagesIndex = true;
-    console.log('OG vegImagesIndex:', vegImagesIndex);
 };
 
 export const manualTiffinImages: Record<string, any[]> = {

@@ -69,7 +69,7 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     const verifyOtp = async () => {
         try{
             const enteredOtp = otpArray.join('');
-            console.log('Entered OTP:', enteredOtp);
+            
             setIsVerifying(true);
             if (enteredOtp.length !== 6) {
                 setErrorMessage('Please enter the complete 6-digit OTP.');
@@ -79,19 +79,15 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
             setErrorMessage(null);
 
             const storedOtp = await AsyncStorage.getItem('otp');
-            console.log('Stored OTP:', storedOtp);
-
+            
             if (enteredOtp !== storedOtp) {
                 setErrorMessage('Invalid OTP.');
                 return;
             }
 
             const pendingUser = await AsyncStorage.getItem('pendingUser');
-            console.log('Pending user:', pendingUser);
-
+            
             if (!pendingUser) {
-                console.log('No pending user');
-
                 setErrorMessage('No pending signup found.');
                 return;
             }

@@ -13,16 +13,13 @@ import { useUser } from '@/ui/context/UserContext';
 import { prefetchImages } from '@/ui/utils/imagePrefetch';
 import { useQueryClient } from '@tanstack/react-query';
 import { mockEvents } from '../Mockdata/mockData';
+import { useVoiceSearch } from '@/domains/search/hooks/useVoiceSearch';
 
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc';
 
 type VenueObj = { name?: string; address?: string; city?: string; state?: string; country?: string };
 
-/**
- * Returns "VenueName · City, State" for the card chip.
- * Falls back gracefully if fields are missing.
- */
 function getCardLocation(item: Event): string {
     if (item.venue && typeof item.venue === 'object') {
         const v = item.venue as VenueObj;
@@ -51,7 +48,7 @@ const FeaturedEventCard = ({ item, onPress }: { item: Event; onPress: (item: Eve
     const toggleFavorite = useToggleLocalEventFavorite();
     const queryClient = useQueryClient();
 
-    const isFavorited = useMemo(() => (favoriteIds ?? []).includes(item._id), [favoriteIds, item._id]);
+    const isFavorited   = useMemo(() => (favoriteIds ?? []).includes(item._id), [favoriteIds, item._id]);
     const locationLabel = useMemo(() => getCardLocation(item), [item]);
     const dateLabel     = useMemo(() => formatEventDate(item), [item]);
 
@@ -96,23 +93,17 @@ const FeaturedEventCard = ({ item, onPress }: { item: Event; onPress: (item: Eve
             </ImageBackground>
 
             <View style={{ marginTop: 10 }}>
-                {/* Location chip */}
                 {!!locationLabel && (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="location-outline" size={12} color="#FF7F50" style={{ marginRight: 3 }} />
-                        <Text
-                            style={{ fontSize: 11, color: '#FF7F50', fontWeight: '600', flex: 1 }}
-                            numberOfLines={1}
-                        >
+                        <Text style={{ fontSize: 11, color: '#FF7F50', fontWeight: '600', flex: 1 }} numberOfLines={1}>
                             {locationLabel}
                         </Text>
                     </View>
                 )}
-                {/* Name */}
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginTop: 4 }} numberOfLines={2}>
                     {item.name || item.title}
                 </Text>
-                {/* Date */}
                 {!!dateLabel && (
                     <Text style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{dateLabel}</Text>
                 )}
@@ -125,17 +116,30 @@ const FeaturedEventCard = ({ item, onPress }: { item: Event; onPress: (item: Eve
 export const EventListScreen: React.FC<Props> = ({ navigation }) => {
     const { user } = useUser();
 
-    const [query, setQuery]               = useState('');
+    const [query, setQuery]                   = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-    const [dateFilter, setDateFilter]     = useState<'upcoming' | 'week' | 'past' | null>(null);
-    const [sortBy, setSortBy]             = useState<SortOption>('default');
-    const [showFilters, setShowFilters]   = useState(false);
+    const [dateFilter, setDateFilter]         = useState<'upcoming' | 'week' | 'past' | null>(null);
+    const [sortBy, setSortBy]                 = useState<SortOption>('default');
+    const [showFilters, setShowFilters]       = useState(false);
+
+    // ── Voice search ──────────────────────────────────────────────────────────
+    const { startListening, stopListening, isListening, isProcessing } = useVoiceSearch(
+        (text) => setQuery(text)          // fills the search bar with the result
+    );
+
+    const handleMicPress = useCallback(() => {
+        if (isListening) {
+            void stopListening();
+        } else {
+            void startListening();
+        }
+    }, [isListening, startListening, stopListening]);
+    // ─────────────────────────────────────────────────────────────────────────
 
     const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isRefetching, refetch } =
         useEventsInfinite();
 
-    // Merge API results with mock events; API items win on duplicate _id
     const allEvents = useMemo(() => {
         const apiItems = data?.pages.flatMap((p) => p.items) ?? [];
         const combined = [...apiItems, ...(mockEvents as Event[])];
@@ -202,8 +206,8 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
             if (dateFilter) {
                 const ms = getEventDateMs(item);
                 if (ms === null) return false;
-                if (dateFilter === 'upcoming' && ms < now)                   return false;
-                if (dateFilter === 'past'     && ms >= now)                  return false;
+                if (dateFilter === 'upcoming' && ms < now)                        return false;
+                if (dateFilter === 'past'     && ms >= now)                       return false;
                 if (dateFilter === 'week'     && (ms < now || ms > now + weekMs)) return false;
             }
             return true;
@@ -275,6 +279,10 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
         </View>
     );
 
+    // ── Mic button appearance ─────────────────────────────────────────────────
+    const micIcon = isListening ? 'mic' : isProcessing ? 'hourglass-outline' : 'mic-outline';
+    const micColor = isListening ? '#FF7F50' : isProcessing ? '#FFA07A' : '#1A1A1A';
+
     return (
         <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
             {/* Sticky header */}
@@ -305,20 +313,44 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
 
                 {/* Search bar */}
-                <View style={{ marginTop: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 22, paddingHorizontal: 16, height: 44, borderWidth: 1, borderColor: '#F0F0F0', elevation: 1 }}>
+                <View style={{
+                    marginTop: 20, flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: '#FFF', borderRadius: 22, paddingHorizontal: 16,
+                    height: 44, borderWidth: 1,
+                    borderColor: isListening ? '#FF7F50' : '#F0F0F0',
+                    elevation: 1,
+                }}>
                     <Ionicons name="search" size={18} color="#666" />
                     <TextInput
                         style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#1A1A1A' }}
-                        placeholder='Search for "Concert"'
-                        placeholderTextColor="#999"
+                        placeholder={isListening ? 'Listening...' : 'Search for "Concert"'}
+                        placeholderTextColor={isListening ? '#FF7F50' : '#999'}
                         value={query}
                         onChangeText={setQuery}
+                        editable={!isListening && !isProcessing}
                     />
                     <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 10 }} />
-                    <TouchableOpacity>
-                        <Ionicons name="mic" size={18} color="#1A1A1A" />
+
+                    {/* Mic button */}
+                    <TouchableOpacity
+                        onPress={handleMicPress}
+                        disabled={isProcessing}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        {isProcessing ? (
+                            <ActivityIndicator size="small" color="#FF7F50" />
+                        ) : (
+                            <Ionicons name={micIcon} size={18} color={micColor} />
+                        )}
                     </TouchableOpacity>
                 </View>
+
+                {/* Listening pulse label */}
+                {isListening && (
+                    <Text style={{ textAlign: 'center', marginTop: 6, fontSize: 12, color: '#FF7F50', fontWeight: '600' }}>
+                        🎙 Tap mic again when done speaking
+                    </Text>
+                )}
             </View>
 
             <FlatList

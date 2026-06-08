@@ -15,13 +15,75 @@ interface RestaurantCardProps {
 
 const IMAGE_HEIGHT = 200;
 
+/**
+ * Returns a stable price for a restaurant.
+ * Priority: real data fields → menu item average → hash fallback (₹300–₹400).
+ * The hash fallback uses the same algorithm as RestaurantListScreen.getPriceValue
+ * so sort order always matches what the card displays.
+ */
+const getStablePrice = (item: Restaurant): number => {
+    const a = item as any;
+
+    // 1. Direct priceRange field
+    if (typeof item.priceRange === 'number') return item.priceRange;
+    if (typeof item.priceRange === 'string') {
+        const match = item.priceRange.match(/\d+/g);
+        if (match?.length) return Number(match[0]);
+    }
+
+    // 2. Common top-level price fields
+    for (const field of [
+        a.deliveryCost, a.delivery_cost, a.minOrder, a.min_order,
+        a.minimumOrder, a.priceForTwo, a.price_for_two,
+        a.avgPrice, a.averagePrice, a.costForTwo,
+    ]) {
+        if (typeof field === 'number' && Number.isFinite(field)) return field;
+        if (typeof field === 'string') {
+            const match = field.match(/\d+/g);
+            if (match?.length) return Number(match[0]);
+        }
+    }
+
+    // 3. Average of menu item prices (handles "₹199", "$12.89", 149, etc.)
+    const menuItems: any[] = [
+        ...(Array.isArray(a.menu) ? a.menu : []),
+        ...(Array.isArray(a.menuSections)
+            ? a.menuSections.flatMap((s: any) => (Array.isArray(s.items) ? s.items : []))
+            : []),
+    ];
+    const prices = menuItems
+        .map((mi: any) => {
+            const p = mi?.price;
+            if (typeof p === 'number' && Number.isFinite(p)) return p;
+            if (typeof p === 'string') {
+                const match = p.replace(/[₹$€£,]/g, '').match(/\d+(\.\d+)?/);
+                if (match) return Number(match[0]);
+            }
+            return null;
+        })
+        .filter((p): p is number => p !== null);
+
+    if (prices.length > 0) {
+        return Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+    }
+
+    // 4. Stable hash fallback — ₹300–₹400, same _id always gives same price.
+    //    MUST match the algorithm in RestaurantListScreen.getPriceValue
+    //    so sort order matches what the card displays.
+    const id = item._id ?? '';
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+        hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+    }
+    return 300 + (hash % 101); // ₹300 – ₹400
+};
+
 export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
     const theme = useTheme();
     const { user } = useUser();
     const { width: screenWidth } = useWindowDimensions();
     const cardWidth = screenWidth - 40;
 
-    // Use a ref for the active dot — avoids setState on every scroll pixel
     const dotRefs = useRef<(View | null)[]>([]);
     const activeIndexRef = useRef(0);
 
@@ -62,41 +124,28 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
         return [];
     };
 
-    const getPriceValue = (r: Restaurant) => {
-        if (typeof r.priceRange === 'number') return r.priceRange;
-        if (typeof r.priceRange === 'string') {
-            const match = r.priceRange.match(/\d+/g);
-            if (match && match.length > 0) return Number(match[0]);
-        }
-        return null;
-    };
-
     const cuisines = useMemo(() => getCuisineTags(item), [item]);
-    const priceValue = useMemo(() => getPriceValue(item), [item]);
 
-    // Stable image array — computed once per item
+    // Stable price — computed once per item, consistent with sort logic
+    const displayPrice = useMemo(() => getStablePrice(item), [item]);
+
     const carouselImages = useMemo(() => {
         const imgs =
             item.images && item.images.length > 0
                 ? item.images
                 : (item.image_urls || [item.imageUrl].filter(Boolean) as string[]);
-        // Cap at 4 images max — no point rendering more
         return imgs.slice(0, 4);
     }, [item.images, item.image_urls, item.imageUrl]);
 
     const dotsCount = carouselImages.length;
 
-    // Update dot colors imperatively via refs — zero setState, zero re-render
     const handleScroll = useCallback(
         (e: NativeSyntheticEvent<NativeScrollEvent>) => {
             const index = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
             if (index === activeIndexRef.current) return;
-
-            // Reset old dot
             dotRefs.current[activeIndexRef.current]?.setNativeProps({
                 style: { backgroundColor: 'rgba(255,255,255,0.5)' },
             });
-            // Activate new dot
             dotRefs.current[index]?.setNativeProps({
                 style: { backgroundColor: '#FFFFFF' },
             });
@@ -130,13 +179,6 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
             <View style={{ height: IMAGE_HEIGHT, backgroundColor: '#F3F4F6' }}>
                 {carouselImages.length > 0 ? (
                     <>
-                        {/* 
-                            Use ScrollView instead of FlatList.
-                            A nested FlatList inside a vertical FlatList forces
-                            React Native to track two separate scroll responders,
-                            which causes frame drops and jank. 
-                            ScrollView with pagingEnabled is lighter for ≤4 images.
-                        */}
                         <ScrollView
                             horizontal
                             pagingEnabled
@@ -170,7 +212,7 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                             }} />
                         </View>
 
-                        {/* Dot indicators — updated imperatively, no re-render */}
+                        {/* Dot indicators */}
                         {dotsCount > 1 && (
                             <View style={{ position: 'absolute', bottom: 10, right: 12, flexDirection: 'row', gap: 4 }}>
                                 {carouselImages.map((_, i) => (
@@ -193,7 +235,7 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                     </View>
                 )}
 
-                {/* Favourite button — outside ScrollView so it never scrolls */}
+                {/* Favourite button */}
                 <TouchableOpacity
                     onPress={handleToggleFavorite}
                     disabled={isMutating}
@@ -256,7 +298,7 @@ export const RestaurantCard = memo<RestaurantCardProps>(({ item, onPress }) => {
                         paddingHorizontal: 10, paddingVertical: 6,
                         shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
                     }}>
-                        <Text style={{ fontSize: 12, color: '#4A4A4A', fontWeight: '600' }}>${priceValue || '200'} for two</Text>
+                        <Text style={{ fontSize: 12, color: '#4A4A4A', fontWeight: '600' }}>₹{displayPrice} for two</Text>
                     </View>
                 </View>
             </View>

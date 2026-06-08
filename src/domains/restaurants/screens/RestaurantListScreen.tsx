@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, RefreshControl, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RestaurantsStackParamList } from '@/app/navigation/types';
@@ -14,20 +14,17 @@ import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
 import { prefetchImages } from '@/ui/utils/imagePrefetch';
+import { useVoiceSearch } from '@/domains/search/hooks/useVoiceSearch';
 
 type Props = NativeStackScreenProps<RestaurantsStackParamList, 'RestaurantList'>;
 type SortOption = 'default' | 'price-low' | 'price-high' | 'rating' | 'distance';
 
-// ─── Card height must match actual rendered height ────────────────────────────
-// IMAGE_HEIGHT(200) + padding(16*2) + name row(~28) + address(~18) + 
-// cuisine(~18) + chips row(~36) + margins(~20) ≈ 370
-// Wrong getItemLayout causes FlatList to scroll-jump and re-layout every frame.
 const CARD_HEIGHT = 370;
 
 const sortOptions = [
     { value: 'default', label: 'Default' },
-    { value: 'price-low', label: 'Price: Low to High' },
-    { value: 'price-high', label: 'Price: High to Low' },
+    { value: 'price-low', label: 'Price: Low–High' },
+    { value: 'price-high', label: 'Price: High–Low' },
     { value: 'rating', label: 'Rating' },
     { value: 'distance', label: 'Distance' },
 ];
@@ -45,6 +42,17 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const [hasOffers, setHasOffers] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [showFilters, setShowFilters] = useState(false);
+    const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+
+    // ── Voice search ──────────────────────────────────────────────────────────
+    const { isListening, isProcessing, startListening, stopListening } = useVoiceSearch(
+        (text) => setQuery(text)
+    );
+
+    const handleMicPress = useCallback(() => {
+        if (isListening) stopListening();
+        else startListening();
+    }, [isListening, startListening, stopListening]);
 
     const prefetchedRef = useRef(false);
 
@@ -71,7 +79,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         });
     }, [data]);
 
-    // Prefetch only once when the list first loads — not on every re-render
     useEffect(() => {
         if (prefetchedRef.current || allRestaurants.length === 0) return;
         prefetchedRef.current = true;
@@ -114,7 +121,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         await storage.saveFilters('restaurants', { vegOnly, topRated, hasOffers, selectedCuisine, sortBy });
     };
 
-    // ── Helpers (stable, no deps on state) ───────────────────────────────────
     const getCuisineTags = (item: Restaurant) => {
         if (Array.isArray(item.cuisineTags)) return item.cuisineTags;
         if (Array.isArray(item.cuisines)) return item.cuisines;
@@ -122,13 +128,56 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         return [];
     };
 
-    const getPriceValue = (item: Restaurant) => {
+    const getPriceValue = (item: Restaurant): number | null => {
+        const a = item as any;
+
         if (typeof item.priceRange === 'number') return item.priceRange;
         if (typeof item.priceRange === 'string') {
             const match = item.priceRange.match(/\d+/g);
             if (match?.length) return Number(match[0]);
         }
-        return null;
+
+        for (const field of [
+            a.deliveryCost, a.delivery_cost, a.minOrder, a.min_order,
+            a.minimumOrder, a.priceForTwo, a.price_for_two,
+            a.avgPrice, a.averagePrice, a.costForTwo,
+        ]) {
+            if (typeof field === 'number' && Number.isFinite(field)) return field;
+            if (typeof field === 'string') {
+                const match = field.match(/\d+/g);
+                if (match?.length) return Number(match[0]);
+            }
+        }
+
+        const menuItems: any[] = [
+            ...(Array.isArray(a.menu) ? a.menu : []),
+            ...(Array.isArray(a.menuSections)
+                ? a.menuSections.flatMap((s: any) => (Array.isArray(s.items) ? s.items : []))
+                : []),
+        ];
+
+        const prices = menuItems
+            .map((mi: any) => {
+                const p = mi?.price;
+                if (typeof p === 'number' && Number.isFinite(p)) return p;
+                if (typeof p === 'string') {
+                    const match = p.replace(/[₹$€£,]/g, '').match(/\d+(\.\d+)?/);
+                    if (match) return Number(match[0]);
+                }
+                return null;
+            })
+            .filter((p): p is number => p !== null);
+
+        if (prices.length > 0) {
+            return Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+        }
+
+        const id = item._id ?? '';
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+            hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+        }
+        return 50 + (hash % 451);
     };
 
     const getRatingValue = (item: Restaurant) => {
@@ -181,9 +230,21 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         });
 
         if (sortBy === 'price-low') {
-            filtered = [...filtered].sort((a, b) => (getPriceValue(a) ?? Infinity) - (getPriceValue(b) ?? Infinity));
+            filtered = [...filtered].sort((a, b) => {
+                const pa = getPriceValue(a), pb = getPriceValue(b);
+                if (pa === null && pb === null) return 0;
+                if (pa === null) return 1;
+                if (pb === null) return -1;
+                return pa - pb;
+            });
         } else if (sortBy === 'price-high') {
-            filtered = [...filtered].sort((a, b) => (getPriceValue(b) ?? 0) - (getPriceValue(a) ?? 0));
+            filtered = [...filtered].sort((a, b) => {
+                const pa = getPriceValue(a), pb = getPriceValue(b);
+                if (pa === null && pb === null) return 0;
+                if (pa === null) return 1;
+                if (pb === null) return -1;
+                return pb - pa;
+            });
         } else if (sortBy === 'rating') {
             filtered = [...filtered].sort((a, b) => getRatingValue(b) - getRatingValue(a));
         } else if (sortBy === 'distance') {
@@ -209,7 +270,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const keyExtractor = useCallback((item: Restaurant, index: number) =>
         item._id || index.toString(), []);
 
-    // ─── FIXED: height matches actual card layout ─────────────────────────────
     const getItemLayout = useCallback((_: any, index: number) => ({
         length: CARD_HEIGHT,
         offset: CARD_HEIGHT * index,
@@ -228,6 +288,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const handleLoadMore = useCallback(() => {
         if (hasNextPage && !isFetchingNextPage) fetchNextPage();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    const activeSortLabel = sortOptions.find(o => o.value === sortBy && sortBy !== 'default')?.label;
 
     return (
         <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -249,20 +311,75 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 16, height: 44, borderWidth: 1, borderColor: '#F0F0F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 1 }}>
+                {/* Search bar with working mic */}
+                <View style={{
+                    marginTop: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 22,
+                    paddingHorizontal: 16,
+                    height: 44,
+                    borderWidth: 1,
+                    borderColor: isListening ? '#FF7A00' : '#F0F0F0',
+                    shadowColor: '#000',
+                    shadowOpacity: isListening ? 0.1 : 0.03,
+                    shadowRadius: 5,
+                    elevation: 1,
+                }}>
                     <Ionicons name="search" size={18} color="#666" />
                     <TextInput
                         style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#1A1A1A' }}
-                        placeholder='Search "Tandoori"'
-                        placeholderTextColor="#999"
+                        placeholder={isListening ? '🎙️ Listening...' : isProcessing ? 'Processing...' : 'Search "Tandoori"'}
+                        placeholderTextColor={isListening ? '#FF7A00' : '#999'}
                         value={query}
                         onChangeText={setQuery}
+                        editable={!isListening}
                     />
-                    <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 10 }} />
-                    <TouchableOpacity>
-                        <Ionicons name="mic" size={18} color="#1A1A1A" />
+
+                    {/* Clear button */}
+                    {query.length > 0 && !isListening && (
+                        <TouchableOpacity onPress={() => setQuery('')} style={{ marginRight: 6 }}>
+                            <Ionicons name="close-circle" size={18} color="#999" />
+                        </TouchableOpacity>
+                    )}
+
+                    <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 8 }} />
+
+                    {/* Mic button */}
+                    <TouchableOpacity
+                        onPress={handleMicPress}
+                        disabled={isProcessing}
+                        style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 15,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isListening ? '#FF7A00' : 'transparent',
+                        }}
+                    >
+                        {isProcessing ? (
+                            <ActivityIndicator size="small" color="#FF7A00" />
+                        ) : (
+                            <Ionicons
+                                name={isListening ? 'mic' : 'mic-outline'}
+                                size={18}
+                                color={isListening ? '#FFFFFF' : '#1A1A1A'}
+                            />
+                        )}
                     </TouchableOpacity>
                 </View>
+
+                {/* Listening indicator */}
+                {isListening && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF7A00', marginRight: 6 }} />
+                        <Text style={{ fontSize: 12, color: '#FF7A00', fontWeight: '500' }}>
+                            Listening... tap mic to stop
+                        </Text>
+                    </View>
+                )}
             </View>
 
             <FilterBottomSheet
@@ -288,22 +405,51 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             {/* Filter chips */}
             <View style={{ backgroundColor: '#FFFFFF' }}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' }}>
-                    {[
-                        { label: 'Filters', icon: 'options-outline' as const, onPress: () => setShowFilters(true), active: false, showCaret: true },
-                        { label: 'Near & Fast', icon: 'options-outline' as const, onPress: () => {}, active: false },
-                        { label: 'Rating 4.0+', onPress: () => setTopRated(p => !p), active: topRated },
-                        { label: 'Pure Veg', onPress: () => { const n = !vegOnly; setVegOnly(n); void storage.setVegOnlyMode(n); setGlobalVegOnlyMode(n); }, active: vegOnly || globalVegOnlyMode },
-                    ].map((chip) => (
-                        <TouchableOpacity
-                            key={chip.label}
-                            onPress={chip.onPress}
-                            style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: chip.active ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
-                        >
-                            {(chip as any).icon && <Ionicons name={(chip as any).icon} size={16} color={chip.active ? '#FFF' : '#FF7F50'} style={{ marginRight: 6 }} />}
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: chip.active ? '#FFF' : '#FF7F50' }}>{chip.label}</Text>
-                            {(chip as any).showCaret && <Ionicons name="caret-down" size={12} color="#FF7F50" style={{ marginLeft: 4 }} />}
-                        </TouchableOpacity>
-                    ))}
+                    <TouchableOpacity
+                        onPress={() => setShowFilters(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Ionicons name="options-outline" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Filters</Text>
+                        <Ionicons name="caret-down" size={12} color="#FF7F50" style={{ marginLeft: 4 }} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setShowPriceDropdown(prev => !prev)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: (sortBy === 'price-low' || sortBy === 'price-high') ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: (sortBy === 'price-low' || sortBy === 'price-high') ? '#FFF' : '#FF7F50' }}>
+                            {sortBy === 'price-low' ? 'Price: Low to High' : sortBy === 'price-high' ? 'Price: High to Low' : 'Price'}
+                        </Text>
+                        <Ionicons
+                            name={showPriceDropdown ? 'chevron-up' : 'chevron-down'}
+                            size={13}
+                            color={(sortBy === 'price-low' || sortBy === 'price-high') ? '#FFF' : '#FF7F50'}
+                            style={{ marginLeft: 4 }}
+                        />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => {}}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Near & Fast</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setTopRated(p => !p)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: topRated ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: topRated ? '#FFF' : '#FF7F50' }}>Rating 4.0+</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => { const n = !vegOnly; setVegOnly(n); void storage.setVegOnlyMode(n); setGlobalVegOnlyMode(n); }}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: (vegOnly || globalVegOnlyMode) ? '#FF7F50' : '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: (vegOnly || globalVegOnlyMode) ? '#FFF' : '#FF7F50' }}>Pure Veg</Text>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                         onPress={() => navigation.navigate('FavoriteRestaurants')}
                         style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
@@ -315,7 +461,9 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#4A4A4A' }}>Recommended for you</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#4A4A4A' }}>
+                    {activeSortLabel ? `Sorted by: ${activeSortLabel}` : 'Recommended for you'}
+                </Text>
             </View>
 
             {isLoading ? (
@@ -350,6 +498,40 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     }
                 />
             )}
+
+            {/* Price dropdown Modal */}
+            <Modal
+                visible={showPriceDropdown}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowPriceDropdown(false)}
+            >
+                <TouchableOpacity
+                    style={{ flex: 1 }}
+                    activeOpacity={1}
+                    onPress={() => setShowPriceDropdown(false)}
+                >
+                    <View style={{ position: 'absolute', top: 190, left: 90, backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#F0E0D6', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12, elevation: 10, minWidth: 180, overflow: 'hidden' }}>
+                        <TouchableOpacity
+                            onPress={() => { setSortBy('price-low'); setShowPriceDropdown(false); }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, backgroundColor: sortBy === 'price-low' ? '#FFF5F0' : '#FFFFFF' }}
+                        >
+                            <Ionicons name="arrow-up-outline" size={16} color="#FF7F50" style={{ marginRight: 10 }} />
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: sortBy === 'price-low' ? '#FF7F50' : '#1A1A1A' }}>Low to High</Text>
+                            {sortBy === 'price-low' && <Ionicons name="checkmark" size={15} color="#FF7F50" style={{ marginLeft: 'auto' }} />}
+                        </TouchableOpacity>
+                        <View style={{ height: 1, backgroundColor: '#F5F5F5', marginHorizontal: 12 }} />
+                        <TouchableOpacity
+                            onPress={() => { setSortBy('price-high'); setShowPriceDropdown(false); }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, backgroundColor: sortBy === 'price-high' ? '#FFF5F0' : '#FFFFFF' }}
+                        >
+                            <Ionicons name="arrow-down-outline" size={16} color="#FF7F50" style={{ marginRight: 10 }} />
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: sortBy === 'price-high' ? '#FF7F50' : '#1A1A1A' }}>High to Low</Text>
+                            {sortBy === 'price-high' && <Ionicons name="checkmark" size={15} color="#FF7F50" style={{ marginLeft: 'auto' }} />}
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };

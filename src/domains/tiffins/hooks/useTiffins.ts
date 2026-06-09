@@ -6,6 +6,7 @@ import { storage } from '@/services/storage/localStorage';
 import { useUser } from '@/ui/context/UserContext';
 import { manualTiffins } from '@/domains/tiffins/data/manualTiffins';
 import { tiffinPrices } from '@/domains/tiffins/data/tiffinPrices';
+import {tiffinName} from '@/domains/tiffins/data/tiffinName';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_TIFFIN_FAVORITES_KEY = ['local-tiffin-favorites'] as const;
@@ -80,7 +81,7 @@ const normalizeTiffin = (item: Tiffin): Tiffin => {
         ...item,
         _id: id,
         pricePerMeal: tiffinPrices[id] ?? item.pricePerMeal,
-        name,
+        name: tiffinName[id] ?? name,
         imageUrl: item.imageUrl || images[0],
         images,
         coverageAreas: item.deliveryCity || item.coverageAreas,

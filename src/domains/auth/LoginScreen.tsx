@@ -119,7 +119,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         //     setIsLoading(false);
         // }
          try {
-            console.log('loading');
             const storedUser = await AsyncStorage.getItem('user');
 
             if (!storedUser) {

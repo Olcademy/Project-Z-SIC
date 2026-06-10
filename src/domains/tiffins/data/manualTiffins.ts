@@ -5,7 +5,7 @@ import { nonVegImagesIndex, nonVegImagesIndexURL} from '../../../../assets/nonVe
 
 export const manualTiffins: Tiffin[] = [
   {
-    _id: 'manual-1',
+    _id: '68691dc6f9a76470f5821841',
     name: 'Annapurna Tiffins',
     shortDescription: 'Homestyle Maharashtrian meals',
     pricePerMeal: 90,
@@ -31,7 +31,7 @@ export const manualTiffins: Tiffin[] = [
     },
   },
   {
-    _id: 'nv-1',
+    _id: '68691dc6f9a76470f5821901',
     name: 'Chicken Tikka House',
     shortDescription: 'Smoky grilled chicken tikka with home-style spices',
     pricePerMeal: 120,
@@ -47,7 +47,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: '68691dc7f9a76470f5823001',
+    _id: '68691dc6f9a76470f5821902',
     name: 'Hyderabadi Chicken Biryani Box',
     shortDescription: 'Aromatic dum biryani with spiced chicken pieces',
     pricePerMeal: 150,
@@ -63,7 +63,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-3',
+    _id: '68691dc6f9a76470f5821903',
     name: 'Butter Chicken Tiffin',
     shortDescription: 'Creamy tomato butter chicken with soft rotis',
     pricePerMeal: 140,
@@ -79,7 +79,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-4',
+    _id: '68691dc6f9a76470f5821904',
     name: 'Egg Curry Combo Tiffin',
     shortDescription: 'Spicy egg curry served with rice and roti',
     pricePerMeal: 90,
@@ -95,7 +95,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-5',
+    _id: '68691dc6f9a76470f5821905',
     name: 'Chicken Curry Roti Tiffin',
     shortDescription: 'Homestyle chicken curry with fresh chapatis',
     pricePerMeal: 110,
@@ -111,7 +111,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-6',
+    _id: '68691dc6f9a76470f5821906',
     name: 'Fish Fry Meal Box',
     shortDescription: 'Crispy fried fish with rice and salad',
     pricePerMeal: 160,
@@ -127,7 +127,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-7',
+    _id: '68691dc6f9a76470f5821907',
     name: 'Homely Tiffin',
     shortDescription: 'Spicy minced chicken served with pav bread',
     pricePerMeal: 100,
@@ -143,7 +143,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-8',
+    _id: '68691dc6f9a76470f5821908',
     name: "Belly's Chicken Fried Rice Box",
     shortDescription: 'Indo-Chinese chicken fried rice combo',
     pricePerMeal: 95,
@@ -159,7 +159,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-9',
+    _id: '68691dc6f9a76470f5821909',
     name: 'Chacha\'s Chicken Korma Tiffin',
     shortDescription: 'Mild creamy chicken curry with naan/roti',
     pricePerMeal: 135,
@@ -175,7 +175,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-10',
+    _id: '68691dc6f9a76470f582190a',
     name: 'Andhra Chicken Curry Box',
     shortDescription: 'Spicy Andhra-style chicken with rice',
     pricePerMeal: 125,
@@ -191,7 +191,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-11',
+    _id: '68691dc6f9a76470f582190b',
     name: 'Special Egg Bhurji Roti Box',
     shortDescription: 'Spiced scrambled eggs with chapati',
     pricePerMeal: 80,
@@ -207,7 +207,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-12',
+    _id: '68691dc6f9a76470f582190c',
     name: 'Mutton Curry Special Box',
     shortDescription: 'Rich slow-cooked mutton curry with rice',
     pricePerMeal: 180,
@@ -223,7 +223,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-13',
+    _id: '68691dc6f9a76470f582190d',
     name: 'Kedar Special Chicken Shawarma Wrap Box',
     shortDescription: 'Juicy grilled chicken wrapped in pita bread',
     pricePerMeal: 110,
@@ -239,7 +239,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-14',
+    _id: '68691dc6f9a76470f582190e',
     name: 'Rashi North Special Chinese Tiffin',
     shortDescription: 'Spicy Indo-Chinese chicken manchurian with rice',
     pricePerMeal: 105,
@@ -255,7 +255,7 @@ export const manualTiffins: Tiffin[] = [
   },
 
   {
-    _id: 'nv-15',
+    _id: '68691dc6f9a76470f582190f',
     name: 'Spicy chicken tandoor meal box ',
     shortDescription: 'Smoky tandoori chicken with roti and salad',
     pricePerMeal: 150,

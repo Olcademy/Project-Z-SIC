@@ -29,6 +29,9 @@ const sortOptions = [
     { value: 'distance', label: 'Distance' },
 ];
 
+// Normalize for reliable comparison — trims + lowercases
+const norm = (s: string) => s.trim().toLowerCase();
+
 export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const theme = useTheme();
     const { user } = useUser();
@@ -121,7 +124,8 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         await storage.saveFilters('restaurants', { vegOnly, topRated, hasOffers, selectedCuisine, sortBy });
     };
 
-    const getCuisineTags = (item: Restaurant) => {
+    // Returns raw tags (original casing) — used for display in cuisineOptions
+    const getCuisineTags = (item: Restaurant): string[] => {
         if (Array.isArray(item.cuisineTags)) return item.cuisineTags;
         if (Array.isArray(item.cuisines)) return item.cuisines;
         if (typeof item.cuisines === 'string') return item.cuisines.split(',').map(c => c.trim()).filter(Boolean);
@@ -209,6 +213,7 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
         return tags.some(t => ['veg', 'vegetarian', 'pure veg'].includes(t));
     };
 
+    // cuisineOptions — same as before, original casing, max 10
     const cuisineOptions = useMemo(() => {
         const set = new Set<string>();
         allRestaurants.forEach(item => getCuisineTags(item).forEach(tag => set.add(tag)));
@@ -218,11 +223,19 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     const filteredAndSortedRestaurants = useMemo(() => {
         const effectiveVegOnly = vegOnly || globalVegOnlyMode;
         const lowerQuery = debouncedQuery.toLowerCase();
+
         let filtered = allRestaurants.filter((item) => {
             const tags = getCuisineTags(item);
             const searchable = [item.name, item.description, ...tags].filter(Boolean).join(' ').toLowerCase();
             if (lowerQuery && !searchable.includes(lowerQuery)) return false;
-            if (selectedCuisine && !tags.includes(selectedCuisine)) return false;
+
+            // FIX: normalize both sides before comparing so "North Indian" === "north indian"
+            if (selectedCuisine) {
+                const normSelected = norm(selectedCuisine);
+                const matched = tags.some(t => norm(t) === normSelected);
+                if (!matched) return false;
+            }
+
             if (effectiveVegOnly && !isVegRestaurant(item)) return false;
             if (topRated && getRatingValue(item) < 4.0) return false;
             if (hasOffers && !hasAnyOffer(item)) return false;
@@ -337,7 +350,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         editable={!isListening}
                     />
 
-                    {/* Clear button */}
                     {query.length > 0 && !isListening && (
                         <TouchableOpacity onPress={() => setQuery('')} style={{ marginRight: 6 }}>
                             <Ionicons name="close-circle" size={18} color="#999" />
@@ -346,16 +358,12 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
 
                     <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 8 }} />
 
-                    {/* Mic button */}
                     <TouchableOpacity
                         onPress={handleMicPress}
                         disabled={isProcessing}
                         style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: 15,
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            width: 30, height: 30, borderRadius: 15,
+                            alignItems: 'center', justifyContent: 'center',
                             backgroundColor: isListening ? '#FF7A00' : 'transparent',
                         }}
                     >
@@ -371,7 +379,6 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                {/* Listening indicator */}
                 {isListening && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 }}>
                         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF7A00', marginRight: 6 }} />
@@ -397,12 +404,18 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
                         onSelect: (v) => { const n = Array.isArray(v) ? v : []; setVegOnly(n.includes('veg')); setTopRated(n.includes('topRated')); setHasOffers(n.includes('offers')); },
                     },
                     { title: 'Diet', options: [{ value: 'veg', label: 'Veg Only' }], selected: (vegOnly || globalVegOnlyMode) ? 'veg' : null, onSelect: () => setVegOnly(p => !p) },
-                    { title: 'Cuisine', options: cuisineOptions.map(c => ({ value: c, label: c })), selected: selectedCuisine, onSelect: (v) => { const c = v as string; setSelectedCuisine(selectedCuisine === c ? null : c); } },
+                    {
+                        title: 'Cuisine',
+                        // value kept as original string; norm() handles comparison in filter
+                        options: cuisineOptions.map(c => ({ value: c, label: c })),
+                        selected: selectedCuisine,
+                        onSelect: (v) => { const c = v as string; setSelectedCuisine(selectedCuisine === c ? null : c); },
+                    },
                     { title: 'Favourites', options: [{ value: 'open', label: 'View favourites' }], selected: null, onSelect: () => { setShowFilters(false); navigation.navigate('FavoriteRestaurants'); } },
                 ]}
             />
 
-            {/* Filter chips */}
+            {/* Filter chips — unchanged */}
             <View style={{ backgroundColor: '#FFFFFF' }}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' }}>
                     <TouchableOpacity

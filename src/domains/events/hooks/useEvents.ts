@@ -4,15 +4,12 @@ import { Event } from '@/domains/events/types';
 import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
-import { mockEvents } from '@/domains/events/Mockdata/mockData'; // adjust path if needed
+import { mockEvents } from '@/domains/events/Mockdata/mockData';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 
 type EventListParams = Record<string, string | number | boolean | string[] | undefined>;
 
-// ─────────────────────────────────────────────
-// Normalize — works for both API and mock items
-// ─────────────────────────────────────────────
 const normalizeEvent = (item: Event): Event => {
     const id = item._id || item.id || '';
     const name = item.name || item.title || '';
@@ -23,30 +20,25 @@ const normalizeEvent = (item: Event): Event => {
     const venueLng = typeof venue === 'object' ? venue?.lng : undefined;
     const venueAddress = typeof venue === 'object' ? venue?.address : undefined;
 
-    const location = item.location ?? {
-        lat: venueLat,
-        lng: venueLng,
-        address: venueAddress,
-    };
+    const location = item.location ?? { lat: venueLat, lng: venueLng, address: venueAddress };
 
     return { ...item, _id: id, name, date, location } as Event;
 };
 
-// Pre-normalized mock events
 const normalizedMockEvents: Event[] = (mockEvents as unknown as Event[]).map(normalizeEvent);
-
-// Set of mock IDs for O(1) lookup — used to skip API calls for mock items
 const mockEventIds = new Set(normalizedMockEvents.map((e) => e._id));
 
-// Merge API results with mock data — API items first, mock fills the rest (no duplicates by _id)
+// ─── KEY FIX ──────────────────────────────────────────────────────────────────
+// Merge API + ALL mock events, dedup by _id (API wins on clash)
+// This runs on EVERY page flatten so no mock event is ever lost
 const mergeWithMock = (apiItems: Event[]): Event[] => {
-    const apiIds = new Set(apiItems.map((e) => e._id));
+    const apiIds = new Set(apiItems.map((e) => e._id).filter(Boolean));
     const mockOnly = normalizedMockEvents.filter((e) => !apiIds.has(e._id));
     return [...apiItems, ...mockOnly];
 };
 
 // ─────────────────────────────────────────────
-// useEvents — non-paginated, API + mock merged
+// useEvents — non-paginated
 // ─────────────────────────────────────────────
 export const useEvents = (params?: EventListParams) => {
     return useQuery({
@@ -68,37 +60,45 @@ export const useEvents = (params?: EventListParams) => {
 };
 
 // ─────────────────────────────────────────────
-// useEventsInfinite — paginated, API + mock merged
+// useEventsInfinite — paginated
+// FIX: mock events appended on page 1 only via mergeWithMock.
+// Screen flattens all pages — so ALL mock + API events always present.
 // ─────────────────────────────────────────────
 export const useEventsInfinite = (params?: EventListParams) => {
     return useInfiniteQuery({
         queryKey: ['events-infinite', params],
         queryFn: async ({ pageParam = 1 }): Promise<{ items: Event[]; nextPage: number | undefined }> => {
+            let apiItems: Event[] = [];
+            let apiHasMore = false;
+
             try {
                 const { data } = await apiClient.get(ENDPOINTS.events.list, {
                     params: { ...params, page: pageParam, limit: 10 },
                 });
                 const payload = data?.data ?? data;
-                const apiItems = Array.isArray(payload) ? (payload as Event[]).map(normalizeEvent) : [];
-
-                // On first page merge mock so list is never empty
-                const items = pageParam === 1 ? mergeWithMock(apiItems) : apiItems;
-
-                if (pageParam === 1) {
-                    await storage.saveCache('events:list', items);
-                }
-
-                return {
-                    items,
-                    nextPage: apiItems.length >= 10 ? pageParam + 1 : undefined,
-                };
+                apiItems = Array.isArray(payload)
+                    ? (payload as Event[]).map(normalizeEvent)
+                    : [];
+                apiHasMore = apiItems.length >= 10;
             } catch {
                 if (pageParam === 1) {
                     const cached = await storage.getCache<Event[]>('events:list', LIST_CACHE_TTL);
-                    return { items: cached ?? normalizedMockEvents, nextPage: undefined };
+                    if (cached) apiItems = cached;
                 }
-                return { items: [], nextPage: undefined };
             }
+
+            // Mock events are only appended on page 1 to avoid duplication across pages.
+            // mergeWithMock deduplicates by _id so API events always win.
+            const items = pageParam === 1 ? mergeWithMock(apiItems) : apiItems;
+
+            if (pageParam === 1) {
+                await storage.saveCache('events:list', items);
+            }
+
+            return {
+                items,
+                nextPage: apiHasMore ? pageParam + 1 : undefined,
+            };
         },
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: 1,
@@ -106,28 +106,22 @@ export const useEventsInfinite = (params?: EventListParams) => {
 };
 
 // ─────────────────────────────────────────────
-// useEventDetail — skips API entirely for mock IDs
-// API is only called for IDs that came from the server
+// useEventDetail
 // ─────────────────────────────────────────────
 export const useEventDetail = (id: string) => {
-    // If this ID belongs to a mock event, resolve it instantly — no API call
     const isMockId = mockEventIds.has(id);
 
     return useQuery({
         queryKey: ['event', id],
         queryFn: async (): Promise<Event | undefined> => {
-            // Mock ID → return immediately, never touch the API
             if (isMockId) {
                 return normalizedMockEvents.find((e) => e._id === id);
             }
-
-            // Real API ID → fetch from server, fall back to mock if something goes wrong
             try {
                 const { data } = await apiClient.get(ENDPOINTS.events.detail(id));
                 const payload = (data?.data ?? data) as Event;
                 return normalizeEvent(payload);
             } catch {
-                // Last resort: check mock anyway (e.g. ID passed from cache)
                 return normalizedMockEvents.find((e) => e._id === id);
             }
         },
@@ -136,7 +130,7 @@ export const useEventDetail = (id: string) => {
 };
 
 // ─────────────────────────────────────────────
-// useEventFeatured — API first, falls back to mock slice
+// useEventFeatured
 // ─────────────────────────────────────────────
 export const useEventFeatured = () => {
     return useQuery({
@@ -155,7 +149,7 @@ export const useEventFeatured = () => {
 };
 
 // ─────────────────────────────────────────────
-// useEventSearch — API first, falls back to mock search
+// useEventSearch
 // ─────────────────────────────────────────────
 export const useEventSearch = (query?: string) => {
     return useQuery({
@@ -182,7 +176,6 @@ export const useEventSearch = (query?: string) => {
 
 // ─────────────────────────────────────────────
 // Shared favorites store
-// Module-level so all hook instances share one source of truth
 // ─────────────────────────────────────────────
 type Listener = () => void;
 const favoritesSet = new Set<string>();
@@ -194,11 +187,11 @@ const toggleFavoriteStore = (id: string): boolean => {
     if (favoritesSet.has(id)) {
         favoritesSet.delete(id);
         notifyFavListeners();
-        return false; // removed → not favorited
+        return false;
     } else {
         favoritesSet.add(id);
         notifyFavListeners();
-        return true; // added → is favorited
+        return true;
     }
 };
 
@@ -212,22 +205,11 @@ const useFavIds = (): string[] => {
     return ids;
 };
 
-// ─────────────────────────────────────────────
-// useLocalEventFavorites
-// Returns { data: string[] } ← favorited event IDs
-// EventCard reads this to compute isFavorited
-// ─────────────────────────────────────────────
 export const useLocalEventFavorites = (): { data: string[] } => {
     const ids = useFavIds();
     return { data: ids };
 };
 
-// ─────────────────────────────────────────────
-// useLocalEventFavoriteItems
-// Returns { data: Event[], isLoading: boolean }
-// FavoriteEventsScreen uses this to get full Event objects
-// Reads from storage first (items saved by EventCard), falls back to mock lookup
-// ─────────────────────────────────────────────
 export const useLocalEventFavoriteItems = () => {
     const queryClient = useQueryClient();
     return useQuery({
@@ -237,7 +219,6 @@ export const useLocalEventFavoriteItems = () => {
                 const stored = await storage.getFavoriteEventItems?.();
                 if (stored && stored.length > 0) return stored as Event[];
             } catch {}
-            // Fallback: resolve IDs from in-memory store against mock
             return Array.from(favoritesSet)
                 .map((id) => normalizedMockEvents.find((e) => e._id === id))
                 .filter(Boolean) as Event[];
@@ -245,12 +226,6 @@ export const useLocalEventFavoriteItems = () => {
     });
 };
 
-// ─────────────────────────────────────────────
-// useToggleLocalEventFavorite
-// Returns a mutation object: { mutateAsync, isPending }
-// mutateAsync(id) → Promise<{ isFavorited: boolean }>
-// EventCard calls: toggleFavorite.mutateAsync(item._id)
-// ─────────────────────────────────────────────
 export const useToggleLocalEventFavorite = () => {
     const [isPending, setIsPending] = useState(false);
 

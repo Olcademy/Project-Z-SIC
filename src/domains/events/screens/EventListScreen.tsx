@@ -12,9 +12,8 @@ import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
 import { prefetchImages } from '@/ui/utils/imagePrefetch';
 import { useQueryClient } from '@tanstack/react-query';
-import { mockEvents } from '../Mockdata/mockData';
-import { useVoiceSearch } from '@/domains/search/hooks/useVoiceSearch';
 
+import { useVoiceSearch } from '@/domains/search/hooks/useVoiceSearch';
 type Props = NativeStackScreenProps<EventsStackParamList, 'EventList'>;
 type SortOption = 'default' | 'date-asc' | 'date-desc';
 
@@ -140,16 +139,10 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
     const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isRefetching, refetch } =
         useEventsInfinite();
 
+    // useEventsInfinite already merges mock + API on page 1 — no need to re-merge here.
+    // Just flatten pages; all events (real + mock) are already included without duplicates.
     const allEvents = useMemo(() => {
-        const apiItems = data?.pages.flatMap((p) => p.items) ?? [];
-        const combined = [...apiItems, ...(mockEvents as Event[])];
-        const seen = new Set<string>();
-        return combined.filter((item) => {
-            if (!item._id) return true;
-            if (seen.has(item._id)) return false;
-            seen.add(item._id);
-            return true;
-        });
+        return data?.pages.flatMap((p) => p.items) ?? [];
     }, [data]);
 
     useEffect(() => {
@@ -240,7 +233,7 @@ export const EventListScreen: React.FC<Props> = ({ navigation }) => {
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    data={allEvents.slice(0, 12)}
+                    data={allEvents}
                     contentContainerStyle={{ paddingHorizontal: 20 }}
                     keyExtractor={(item) => `featured-${item._id}`}
                     renderItem={({ item }) => <FeaturedEventCard item={item} onPress={handleEventPress} />}

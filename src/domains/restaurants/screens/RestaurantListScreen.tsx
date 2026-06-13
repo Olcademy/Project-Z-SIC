@@ -214,11 +214,17 @@ export const RestaurantListScreen: React.FC<Props> = ({ navigation }) => {
     };
 
     // cuisineOptions — same as before, original casing, max 10
-    const cuisineOptions = useMemo(() => {
-        const set = new Set<string>();
-        allRestaurants.forEach(item => getCuisineTags(item).forEach(tag => set.add(tag)));
-        return Array.from(set).slice(0, 10);
-    }, [allRestaurants]);
+   const cuisineOptions = useMemo(() => {
+    const PRIORITY_TAGS = ['Smoothies', 'Juice Bar', 'Vegan', 'Vegetarian', 'Pure Veg', 'Indian', 'South Indian'];
+    const set = new Set<string>();
+    allRestaurants.forEach(item => getCuisineTags(item).forEach(tag => set.add(tag)));
+    
+    const all = Array.from(set);
+    const priority = all.filter(t => PRIORITY_TAGS.some(p => p.toLowerCase() === t.toLowerCase()));
+    const rest = all.filter(t => !PRIORITY_TAGS.some(p => p.toLowerCase() === t.toLowerCase()));
+    
+    return [...priority, ...rest].slice(0, 15); // priority tags pehle, phir baaki
+}, [allRestaurants]);
 
     const filteredAndSortedRestaurants = useMemo(() => {
         const effectiveVegOnly = vegOnly || globalVegOnlyMode;

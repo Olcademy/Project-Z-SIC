@@ -4,12 +4,17 @@ import { apiClient } from '@/platform/api/client';
 import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
 import { useUser } from '@/ui/context/UserContext';
+import { mockRestaurants, mockRestaurantDetails } from '@/domains/restaurants/MockData/mockdata';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_FAVORITES_KEY = ['local-restaurant-favorites'] as const;
 const LOCAL_FAVORITE_ITEMS_KEY = ['local-restaurant-favorite-items'] as const;
 
 type TakeawayListParams = Record<string, string | number | boolean | string[] | undefined>;
+
+// ─── Detect mock IDs — never hit the real API for these ───────────────────────
+// Matches: fr1, fr2 ... fr99, r1, r2 ... r99
+const isMockId = (id: string): boolean => /^(fr|r)\d+$/.test(id);
 
 const normalizeRestaurant = (item: Restaurant): Restaurant => {
     const name = item.restaurantInfo?.name || item.name;
@@ -52,6 +57,19 @@ const normalizeRestaurant = (item: Restaurant): Restaurant => {
     } as Restaurant;
 };
 
+/**
+ * Merges API results with mock data.
+ * - API items come first (real data takes priority).
+ * - Mock items whose _id doesn't clash with any API item are appended.
+ */
+const mergeWithMock = (apiItems: Restaurant[]): Restaurant[] => {
+    const apiIds = new Set(apiItems.map((r) => r._id).filter(Boolean));
+    const uniqueMock = mockRestaurants
+        .filter((m) => !apiIds.has(m._id))
+        .map((m) => normalizeRestaurant(m));
+    return [...apiItems, ...uniqueMock];
+};
+
 export const useRestaurants = (params?: TakeawayListParams) => {
     const queryParams = { feature: 'Takeaway', ...(params || {}) };
     return useQuery({
@@ -70,54 +88,65 @@ export const useRestaurants = (params?: TakeawayListParams) => {
                     ? (payload.data as Restaurant[])
                     : [];
                 const normalized = items.map((item) => normalizeRestaurant(item as Restaurant & Record<string, unknown>));
-                await storage.saveCache('restaurants:list', normalized);
-                return normalized;
+                const merged = mergeWithMock(normalized);
+                await storage.saveCache('restaurants:list', merged);
+                return merged;
             } catch (error) {
                 const cached = await storage.getCache<Restaurant[]>('restaurants:list', LIST_CACHE_TTL);
-                return cached ?? [];
+                return cached ?? mergeWithMock([]);
             }
         },
+        retry: 0,
+        staleTime: 5 * 60 * 1000,
     });
 };
+
+const PAGE_SIZE = 10;
 
 export const useRestaurantsInfinite = (params?: TakeawayListParams) => {
     const queryParams = { feature: 'Takeaway', ...(params || {}) };
     return useInfiniteQuery({
         queryKey: ['restaurants-infinite', queryParams],
         queryFn: async ({ pageParam = 1 }) => {
+            let apiItems: Restaurant[] = [];
+            let apiHasMore = false;
+
             try {
                 const { data } = await apiClient.get(ENDPOINTS.takeaway.list, {
-                    params: { ...queryParams, page: pageParam, limit: 10 },
+                    params: { ...queryParams, page: pageParam, limit: PAGE_SIZE },
                 });
                 const payload = data?.data ?? data;
-                let items: Restaurant[] = [];
-                if (Array.isArray(payload)) items = payload;
-                else if (Array.isArray(payload?.restaurants)) items = payload.restaurants;
-                else if (Array.isArray(payload?.items)) items = payload.items;
-                else if (Array.isArray(payload?.data)) items = payload.data;
+                let raw: Restaurant[] = [];
+                if (Array.isArray(payload)) raw = payload;
+                else if (Array.isArray(payload?.restaurants)) raw = payload.restaurants;
+                else if (Array.isArray(payload?.items)) raw = payload.items;
+                else if (Array.isArray(payload?.data)) raw = payload.data;
 
-                const normalized = items.map((item) => normalizeRestaurant(item as Restaurant & Record<string, unknown>));
+                apiItems = raw.map((item) => normalizeRestaurant(item as Restaurant & Record<string, unknown>));
+                apiHasMore = raw.length >= PAGE_SIZE;
 
                 if (pageParam === 1) {
-                    await storage.saveCache('restaurants:list', normalized);
+                    await storage.saveCache('restaurants:list', apiItems);
                 }
-
-                return {
-                    items: normalized,
-                    nextPage: items.length >= 10 ? pageParam + 1 : undefined,
-                };
-            } catch (error) {
+            } catch {
                 if (pageParam === 1) {
                     const cached = await storage.getCache<Restaurant[]>('restaurants:list', LIST_CACHE_TTL);
-                    if (cached) {
-                        return { items: cached, nextPage: undefined };
-                    }
+                    if (cached) apiItems = cached;
                 }
-                return { items: [], nextPage: undefined };
             }
+
+            // Merge mock only on first page to avoid duplication
+            const items = pageParam === 1 ? mergeWithMock(apiItems) : apiItems;
+
+            return {
+                items,
+                nextPage: apiHasMore ? pageParam + 1 : undefined,
+            };
         },
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: 1,
+        retry: 0,
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -125,11 +154,33 @@ export const useRestaurantDetail = (id: string) => {
     return useQuery({
         queryKey: ['restaurant', id],
         queryFn: async () => {
-            const { data } = await apiClient.get(ENDPOINTS.takeaway.detail(id));
-            const payload = (data.data || data) as RestaurantDetail;
-            return normalizeRestaurant(payload as Restaurant & Record<string, unknown>) as RestaurantDetail;
+            const mockDetail = mockRestaurantDetails[id];
+
+            // ── KEY FIX: mock IDs (fr1, r3 etc.) must NEVER hit the real API.
+            // The backend doesn't know these IDs and always returns 500,
+            // which caused the red LogBox error and scroll lag.
+            if (isMockId(id)) {
+                if (mockDetail) return normalizeRestaurant(mockDetail as Restaurant) as RestaurantDetail;
+                const listFallback = mockRestaurants.find((r) => r._id === id);
+                if (listFallback) return normalizeRestaurant(listFallback) as RestaurantDetail;
+                throw new Error(`Mock restaurant ${id} not found`);
+            }
+
+            // Real API IDs — try server first, fall back to mock
+            try {
+                const { data } = await apiClient.get(ENDPOINTS.takeaway.detail(id));
+                const payload = (data.data || data) as RestaurantDetail;
+                return normalizeRestaurant(payload as Restaurant & Record<string, unknown>) as RestaurantDetail;
+            } catch {
+                if (mockDetail) return normalizeRestaurant(mockDetail as Restaurant) as RestaurantDetail;
+                const listFallback = mockRestaurants.find((r) => r._id === id);
+                if (listFallback) return normalizeRestaurant(listFallback) as RestaurantDetail;
+                throw new Error(`Restaurant ${id} not found`);
+            }
         },
         enabled: !!id,
+        retry: 0,
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -137,10 +188,21 @@ export const useRestaurantMenuSections = (id: string) => {
     return useQuery({
         queryKey: ['restaurant-menu-sections', id],
         queryFn: async () => {
-            const { data } = await apiClient.get(ENDPOINTS.takeaway.menuSections(id));
-            return data?.data ?? data;
+            // Skip API for mock IDs
+            if (isMockId(id)) {
+                const mockDetail = mockRestaurantDetails[id];
+                return mockDetail?.menuSections ?? null;
+            }
+            try {
+                const { data } = await apiClient.get(ENDPOINTS.takeaway.menuSections(id));
+                return data?.data ?? data;
+            } catch {
+                const mockDetail = mockRestaurantDetails[id];
+                return mockDetail?.menuSections ?? null;
+            }
         },
         enabled: !!id,
+        retry: 0,
     });
 };
 
@@ -194,8 +256,6 @@ export const useTakeawayFavoriteStatus = (id: string, options?: { enabled?: bool
                 const { data } = await apiClient.get(ENDPOINTS.takeaway.favorites.check(id));
                 return data?.data ?? data;
             } catch (error: any) {
-                // Backend's favCheck returns 404 "User not found" when the user
-                // record doesn't exist server-side. Treat as "not favorited".
                 if (error?.response?.status === 404) {
                     return null;
                 }

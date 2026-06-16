@@ -82,12 +82,39 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
         'Main Course': false,
     });
 
-    const mostOrderedTogether = useMemo(() => {
-        return [
-            { key: 'mexicanPizza', title: 'Mexican Pizza', veg: true, image: pizzaImg },
-            { key: 'chickenPizza', title: 'Chicken Pizza', veg: false, image: pizzaImg2 },
-        ] as const;
-    }, []);
+   const mostOrderedTogether = useMemo(() => {
+        const vegItems = [
+            {
+                key: 'paneerPizza',
+                title: 'Paneer Pizza',
+                veg: true,
+                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800',
+            },
+            {
+                key: 'vegBurger',
+                title: 'Veg Burger',
+                veg: true,
+                image: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=800',
+            },
+        ];
+
+        const nonVegItems = [
+            {
+                key: 'chickenPizza',
+                title: 'Chicken Pizza',
+                veg: false,
+                image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800',
+            },
+            {
+                key: 'chickenBurger',
+                title: 'Chicken Burger',
+                veg: false,
+                image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800',
+            },
+        ];
+
+        return normalizedRestaurant?.isVeg ? vegItems : nonVegItems;
+    }, [normalizedRestaurant?.isVeg]);
 
     const images = useMemo(() => {
         if (!normalizedRestaurant) return [];
@@ -419,24 +446,40 @@ export const RestaurantDetailScreen: React.FC<Props> = ({ route, navigation }) =
                     <View style={styles.motListCard}>
                         {mostOrderedTogether.map((row, index) => {
                             const badgeColor = row.veg ? '#1B5E20' : '#B71C1C';
+
                             return (
                                 <View key={row.key} style={styles.motRow}>
-                                    <Image source={row.image} style={styles.motImage} />
+                                    <Image 
+                                        source={{ uri: row.image }} 
+                                        style={styles.motImage} 
+                                    />
+
                                     <View style={styles.motRight}>
-                                        <Text style={styles.motTitle} numberOfLines={1}>{row.title}</Text>
-                                        <Text style={styles.motSubtitle} numberOfLines={1}>Pizza · 8" · small</Text>
+                                        <Text style={styles.motTitle} numberOfLines={1}>
+                                            {row.title}
+                                        </Text>
+
+                                        <Text style={styles.motSubtitle} numberOfLines={1}>
+                                            Pizza · 8" · small
+                                        </Text>
+
                                         <Text style={styles.motDesc} numberOfLines={2}>
                                             Tortillas (distinct from tostada shells) stacked with a layer of refried beans and seasoned ground beef in between.
                                         </Text>
+
                                         <View style={styles.motMetaRow}>
                                             <Text style={styles.motPrice}>$12.89</Text>
                                             <Text style={styles.motDiscount}>20% OFF</Text>
                                         </View>
                                     </View>
+
                                     <View style={[styles.vegBadge, { borderColor: badgeColor }]}>
                                         <View style={[styles.vegDot, { backgroundColor: badgeColor }]} />
                                     </View>
-                                    {index < mostOrderedTogether.length - 1 ? <View style={styles.motDivider} /> : null}
+
+                                    {index < mostOrderedTogether.length - 1 ? (
+                                        <View style={styles.motDivider} />
+                                    ) : null}
                                 </View>
                             );
                         })}

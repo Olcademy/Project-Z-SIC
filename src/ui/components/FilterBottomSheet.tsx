@@ -13,6 +13,7 @@ export type FilterSection = {
     selected: string | string[] | null;
     onSelect: (value: string | string[]) => void;
     multi?: boolean;
+    
 };
 
 type Props = {
@@ -21,10 +22,13 @@ type Props = {
     onClear: () => void;
     sections: FilterSection[];
     accentColor?: string;
+    title?: string;
+
 };
 
 export const FilterBottomSheet: React.FC<Props> = ({
-    visible, onClose, onClear, sections, accentColor = '#FF7A00',
+    visible, onClose, onClear, sections, accentColor = '#FF7A00', title = 'Filters',
+
 }) => {
     const theme = useTheme();
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -72,7 +76,7 @@ export const FilterBottomSheet: React.FC<Props> = ({
 
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>Filters</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>{title}</Text>
                     <TouchableOpacity onPress={onClear}>
                         <Text style={{ fontSize: 13, fontWeight: '600', color: accentColor }}>Clear all</Text>
                     </TouchableOpacity>

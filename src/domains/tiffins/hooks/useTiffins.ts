@@ -5,6 +5,8 @@ import { ENDPOINTS } from '@/platform/api/endpoints';
 import { storage } from '@/services/storage/localStorage';
 import { useUser } from '@/ui/context/UserContext';
 import { manualTiffins } from '@/domains/tiffins/data/manualTiffins';
+import { tiffinPrices } from '@/domains/tiffins/data/tiffinPrices';
+import {tiffinName} from '@/domains/tiffins/data/tiffinName';
 
 const LIST_CACHE_TTL = 6 * 60 * 60 * 1000;
 const LOCAL_TIFFIN_FAVORITES_KEY = ['local-tiffin-favorites'] as const;
@@ -72,10 +74,14 @@ const normalizeTiffin = (item: Tiffin): Tiffin => {
         }
     }
 
+    const id = item._id || item.id || '';
+
+
     return {
         ...item,
-        _id: item._id || item.id || '',
-        name,
+        _id: id,
+        pricePerMeal: tiffinPrices[id] ?? item.pricePerMeal,
+        name: tiffinName[id] ?? name,
         imageUrl: item.imageUrl || images[0],
         images,
         coverageAreas: item.deliveryCity || item.coverageAreas,
@@ -93,11 +99,14 @@ export const useTiffins = (params?: TiffinListParams) => {
                 const payload = response.data?.tiffins ?? response.data?.data ?? response.data;
                 const items = Array.isArray(payload) ? payload : [];
                 const normalized = items.map((item) => normalizeTiffin(item));
-                await storage.saveCache('tiffins:list', normalized);
-                return [
+                const merged = [
                     ...normalized,
                     ...manualTiffins.map(normalizeTiffin),
                 ];
+
+                await storage.saveCache('tiffins:list', merged);
+                // await storage.saveCache('tiffins:list', normalized);
+                return merged;
             } catch (error) {
                 const cached = await storage.getCache<Tiffin[]>('tiffins:list', LIST_CACHE_TTL);
                 return (cached ?? []).map((item) => normalizeTiffin(item));
@@ -117,18 +126,22 @@ export const useTiffinsInfinite = (params?: TiffinListParams) => {
                 const payload = response.data?.tiffins ?? response.data?.data ?? response.data;
                 const items = Array.isArray(payload) ? payload : [];
                 const normalized = items.map((item) => normalizeTiffin(item));
+                const merged = [
+                    ...normalized,
+                    ...(pageParam === 1
+                        ? manualTiffins.map(normalizeTiffin)
+                        : []),
+                ];
 
+                // if (pageParam === 1) {
+                //     await storage.saveCache('tiffins:list', normalized);
+                // }
                 if (pageParam === 1) {
-                    await storage.saveCache('tiffins:list', normalized);
+                    await storage.saveCache('tiffins:list', merged);
                 }
 
                 return {
-                    items: [
-                        ...normalized,
-                        ...(pageParam === 1
-                        ? manualTiffins.map(normalizeTiffin)
-                        : []),
-                    ],
+                    items: merged,
                     nextPage: items.length >= 10 ? pageParam + 1 : undefined,
                 };
             } catch (error) {

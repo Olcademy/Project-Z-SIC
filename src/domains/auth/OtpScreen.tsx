@@ -6,8 +6,9 @@ import { apiClient } from '@/platform/api/client';
 import { useAppSelector } from '@/hooks/useAppStore';
 import { useUser } from '@/ui/context/UserContext';
 import { setUserAuthToken } from '@/platform/auth/token';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
- type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
 
 export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     const { email, password, username } = route.params;
@@ -66,67 +67,96 @@ export const OtpScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     const verifyOtp = async () => {
-        const enteredOtp = otpArray.join('');
-        if (enteredOtp.length !== 6) {
-            setErrorMessage('Please enter the complete 6-digit OTP.');
-            return;
-        }
-
-        setIsVerifying(true);
-        setErrorMessage(null);
-        try {
-            await apiClient.post('/api/verify', {
-                identifier: email.trim().toLowerCase(),
-                otp: Number(enteredOtp),
-                password,
-                username,
-            });
-
-            let loggedIn = false;
-            if (password) {
-                try {
-                    const loginResponse = await apiClient.post('/api/login', {
-                        email: email.trim().toLowerCase(),
-                        password,
-                        rememberMe: true,
-                    });
-                    if (loginResponse.data?.success || loginResponse.data?.message === 'Login successful!') {
-                        const token = loginResponse.data?.token || loginResponse.data?.data?.token;
-                        await setUserAuthToken(token, { persist: true });
-
-                        const derivedName = (username || email.split('@')[0])
-                            .replace(/[^a-zA-Z0-9]/g, ' ')
-                            .replace(/\b\w/g, (c) => c.toUpperCase())
-                            .trim();
-                        const userData = loginResponse.data.user || {
-                            name: derivedName,
-                            email,
-                            phone: '',
-                            location: 'India',
-                        };
-
-                        if (!userData.name || String(userData.name).trim() === '') {
-                            userData.name = derivedName;
-                        }
-
-                        await login(userData, { rememberMe: true });
-                        loggedIn = true;
-                    }
-                } catch {
-                    loggedIn = false;
-                }
-            }
-
-            if (loggedIn) {
+        try{
+            const enteredOtp = otpArray.join('');
+            
+            setIsVerifying(true);
+            if (enteredOtp.length !== 6) {
+                setErrorMessage('Please enter the complete 6-digit OTP.');
                 return;
-            } else {
-                navigation.replace('Login');
             }
-        } catch (error: any) {
-            setErrorMessage(error?.response?.data?.error || error?.response?.data?.message || 'Invalid OTP.');
-        } finally {
+            
+            setErrorMessage(null);
+
+            const storedOtp = await AsyncStorage.getItem('otp');
+            
+            if (enteredOtp !== storedOtp) {
+                setErrorMessage('Invalid OTP.');
+                return;
+            }
+
+            const pendingUser = await AsyncStorage.getItem('pendingUser');
+            
+            if (!pendingUser) {
+                setErrorMessage('No pending signup found.');
+                return;
+            }
+            
+            await AsyncStorage.setItem('user', pendingUser);
+            await AsyncStorage.removeItem('pendingUser');
+            await AsyncStorage.removeItem('otp');
+
             setIsVerifying(false);
+            navigation.replace('Login');
+        } finally{
+            setIsVerifying(false);
+
         }
+        
+        
+        // try {
+        //     await apiClient.post('/api/verify', {
+        //         identifier: email.trim().toLowerCase(),
+        //         otp: Number(enteredOtp),
+        //         password,
+        //         username,
+        //     });
+
+        //     let loggedIn = false;
+        //     if (password) {
+        //         try {
+        //             const loginResponse = await apiClient.post('/api/login', {
+        //                 email: email.trim().toLowerCase(),
+        //                 password,
+        //                 rememberMe: true,
+        //             });
+        //             if (loginResponse.data?.success || loginResponse.data?.message === 'Login successful!') {
+        //                 const token = loginResponse.data?.token || loginResponse.data?.data?.token;
+        //                 await setUserAuthToken(token, { persist: true });
+
+        //                 const derivedName = (username || email.split('@')[0])
+        //                     .replace(/[^a-zA-Z0-9]/g, ' ')
+        //                     .replace(/\b\w/g, (c) => c.toUpperCase())
+        //                     .trim();
+        //                 const userData = loginResponse.data.user || {
+        //                     name: derivedName,
+        //                     email,
+        //                     phone: '',
+        //                     location: 'India',
+        //                 };
+
+        //                 if (!userData.name || String(userData.name).trim() === '') {
+        //                     userData.name = derivedName;
+        //                 }
+
+        //                 await login(userData, { rememberMe: true });
+        //                 loggedIn = true;
+        //             }
+        //         } catch {
+        //             loggedIn = false;
+        //         }
+        //     }
+
+        //     if (loggedIn) {
+        //         return;
+        //     } else {
+        //         navigation.replace('Login');
+        //     }
+        // } catch (error: any) {
+        //     setErrorMessage(error?.response?.data?.error || error?.response?.data?.message || 'Invalid OTP.');
+        // } finally {
+        //     setIsVerifying(false);
+        // }
     };
 
     const resendOtp = async () => {

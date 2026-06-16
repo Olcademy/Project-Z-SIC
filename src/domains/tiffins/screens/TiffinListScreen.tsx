@@ -31,6 +31,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     const [hasOffers, setHasOffers] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [showFilters, setShowFilters] = useState(false);
+    const [sheetType, setSheetType] = useState<'filters' | 'sort'>('filters');
 
     // ── Voice search ──────────────────────────────────────────────────────────
     const { startListening, stopListening, isListening, isProcessing } = useVoiceSearch(
@@ -182,6 +183,10 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     }, [allTiffins, debouncedQuery, vegOnly, globalVegOnlyMode, topRated, hasOffers, sortBy]);
 
     const handleTiffinPress = useCallback((item: Tiffin) => {
+        // console.log('Tiffin:', {
+        //     id: item._id,
+        //     name: item.name,
+        // });
         navigation.navigate('TiffinDetail', { item });
     }, [navigation]);
 
@@ -189,7 +194,11 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         <View style={{ backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' }}>
                 <TouchableOpacity
-                    onPress={() => setShowFilters(true)}
+                    // onPress={() => setShowFilters(true)}
+                    onPress={() => {
+                        setSheetType('filters');
+                        setShowFilters(true);
+                    }}
                     style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                 >
                     <Ionicons name="options-outline" size={16} color="#FF7F50" style={{ marginRight: 6 }} />
@@ -198,7 +207,11 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => setShowFilters(true)}
+                    // onPress={() => setShowFilters(true)}
+                    onPress={() => {
+                        setSheetType('sort');
+                        setShowFilters(true);
+                    }}
                     style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF5F0', borderColor: '#FF7F50', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 }}
                 >
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#FF7F50' }}>Sort</Text>
@@ -355,51 +368,68 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
 
             <FilterBottomSheet
                 visible={showFilters}
+                title={sheetType === 'sort' ? 'Sort' : 'Filters'}
                 onClose={() => setShowFilters(false)}
                 onClear={() => { setVegOnly(false); setTopRated(false); setHasOffers(false); setSortBy('default'); }}
                 accentColor="#FF7F50"
-                sections={[
-                    {
-                        title: 'Sort by',
-                        options: [
-                            { value: 'default', label: 'Default' },
-                            { value: 'price-low', label: 'Price: Low to High' },
-                            { value: 'price-high', label: 'Price: High to Low' },
-                            { value: 'veg-first', label: 'Veg first' },
-                        ],
-                        selected: sortBy,
-                        onSelect: (v) => setSortBy(v as SortOption),
-                    },
-                    {
-                        title: 'Features',
-                        options: [
-                            { value: 'veg', label: 'Veg Only' },
-                            { value: 'topRated', label: 'Rating 4.0+' },
-                            { value: 'offers', label: 'Offers' },
-                        ],
-                        multi: true,
-                        selected: [
-                            ...((vegOnly || globalVegOnlyMode) ? ['veg'] : []),
-                            ...(topRated ? ['topRated'] : []),
-                            ...(hasOffers ? ['offers'] : []),
-                        ],
-                        onSelect: (v) => {
-                            const next = Array.isArray(v) ? v : [];
-                            setVegOnly(next.includes('veg'));
-                            setTopRated(next.includes('topRated'));
-                            setHasOffers(next.includes('offers'));
+                sections={
+                    sheetType === 'sort'
+                    ?[
+                        {
+                            title: 'Sort by',
+                            options: [
+                                { value: 'default', label: 'Default' },
+                                { value: 'price-low', label: 'Price: Low to High' },
+                                { value: 'price-high', label: 'Price: High to Low' },
+                                { value: 'veg-first', label: 'Veg first' },
+                            ],
+                            selected: sortBy,
+                            onSelect: (v) => setSortBy(v as SortOption),
                         },
-                    },
-                    {
-                        title: 'Favourites',
-                        options: [{ value: 'open', label: 'View favourites' }],
-                        selected: null,
-                        onSelect: () => {
-                            setShowFilters(false);
-                            navigation.navigate('FavoriteTiffins');
+                    ]
+                    :[
+                        {
+                            title: 'Sort by',
+                            options: [
+                                { value: 'default', label: 'Default' },
+                                { value: 'price-low', label: 'Price: Low to High' },
+                                { value: 'price-high', label: 'Price: High to Low' },
+                                { value: 'veg-first', label: 'Veg first' },
+                            ],
+                            selected: sortBy,
+                            onSelect: (v) => setSortBy(v as SortOption),
                         },
-                    },
-                ]}
+                        {
+                            title: 'Features',
+                            options: [
+                                { value: 'veg', label: 'Veg Only' },
+                                { value: 'topRated', label: 'Rating 4.0+' },
+                                { value: 'offers', label: 'Offers' },
+                            ],
+                            multi: true,
+                            selected: [
+                                ...((vegOnly || globalVegOnlyMode) ? ['veg'] : []),
+                                ...(topRated ? ['topRated'] : []),
+                                ...(hasOffers ? ['offers'] : []),
+                            ],
+                            onSelect: (v) => {
+                                const next = Array.isArray(v) ? v : [];
+                                setVegOnly(next.includes('veg'));
+                                setTopRated(next.includes('topRated'));
+                                setHasOffers(next.includes('offers'));
+                            },
+                        },
+                        {
+                            title: 'Favourites',
+                            options: [{ value: 'open', label: 'View favourites' }],
+                            selected: null,
+                            onSelect: () => {
+                                setShowFilters(false);
+                                navigation.navigate('FavoriteTiffins');
+                            },
+                        },
+                    ]
+                }
             />
         </View>
     );

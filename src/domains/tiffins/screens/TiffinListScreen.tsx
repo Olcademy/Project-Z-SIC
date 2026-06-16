@@ -14,6 +14,7 @@ import { useTheme } from '@/ui/context/ThemeContext';
 import { FilterBottomSheet } from '@/ui/components/FilterBottomSheet';
 import { useUser } from '@/ui/context/UserContext';
 import { prefetchImages } from '@/ui/utils/imagePrefetch';
+import { useVoiceSearch } from '@/domains/search/hooks/useVoiceSearch';
 
 type Props = NativeStackScreenProps<TiffinStackParamList, 'TiffinList'>;
 type SortOption = 'default' | 'price-low' | 'price-high' | 'veg-first';
@@ -31,6 +32,20 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [showFilters, setShowFilters] = useState(false);
     const [sheetType, setSheetType] = useState<'filters' | 'sort'>('filters');
+
+    // ── Voice search ──────────────────────────────────────────────────────────
+    const { startListening, stopListening, isListening, isProcessing } = useVoiceSearch(
+        (text) => setQuery(text)
+    );
+
+    const handleMicPress = useCallback(() => {
+        if (isListening) {
+            void stopListening();
+        } else {
+            void startListening();
+        }
+    }, [isListening, startListening, stopListening]);
+    // ─────────────────────────────────────────────────────────────────────────
 
     const {
         data,
@@ -129,24 +144,22 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
 
     const isVegTiffin = (item: Tiffin) => {
         const text = [
-            item.name, 
-            item.shortDescription, 
+            item.name,
+            item.shortDescription,
             ...(Array.isArray(item.category) ? item.category : [])
         ].filter(Boolean).join(' ').toLowerCase();
-        
+
         const nonVegKeywords = ['chicken', 'mutton', 'beef', 'pork', 'fish', 'prawn', 'meat', 'egg', 'non-veg', 'non veg', 'nonveg'];
-        if (nonVegKeywords.some(kw => text.includes(kw))) {
-            return false;
-        }
+        if (nonVegKeywords.some(kw => text.includes(kw))) return false;
 
         const vegKeywords = ['veg', 'vegetarian', 'paneer', 'dal', 'roti', 'rice', 'sabzi', 'pure veg', 'chole', 'rajma', 'aloo', 'thali'];
-        if (vegKeywords.some(kw => text.includes(kw))) {
-            return true;
-        }
+        if (vegKeywords.some(kw => text.includes(kw))) return true;
 
         return item.vegOnly === true;
     };
+
     const effectiveVegOnly = vegOnly || globalVegOnlyMode;
+
     const filteredAndSortedTiffins = useMemo(() => {
         const lowerQuery = debouncedQuery.toLowerCase();
         let filtered = allTiffins.filter((item) => {
@@ -244,6 +257,9 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         </View>
     );
 
+    // ── Mic button appearance ─────────────────────────────────────────────────
+    const micColor = isListening ? '#FF7F50' : '#1A1A1A';
+
     return (
         <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
             {/* Sticky Header with Search Bar */}
@@ -251,7 +267,9 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 28, fontWeight: '700', color: '#1A1A1A' }}>Hey, {user?.name?.split(' ')[0] || 'Ganesh'}</Text>
+                            <Text style={{ fontSize: 28, fontWeight: '700', color: '#1A1A1A' }}>
+                                Hey, {user?.name?.split(' ')[0] || 'Ganesh'}
+                            </Text>
                             <Text style={{ fontSize: 24, marginLeft: 8 }}>👋</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
@@ -259,28 +277,59 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                             <Text style={{ fontSize: 16, color: '#4A4A4A', marginLeft: 4, fontWeight: '500' }}>Toronto, Canada..</Text>
                         </View>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('SettingsStack' as any)}
                         style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#5D69BE', alignItems: 'center', justifyContent: 'center' }}
                     >
-                        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>{(user?.name || 'G')[0].toUpperCase()}</Text>
+                        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>
+                            {(user?.name || 'G')[0].toUpperCase()}
+                        </Text>
                     </TouchableOpacity>
                 </View>
 
-                <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 16, height: 44, borderWidth: 1, borderColor: '#F0F0F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 1 }}>
+                {/* Search bar */}
+                <View style={{
+                    marginTop: 16, flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 16,
+                    height: 44, borderWidth: 1,
+                    borderColor: isListening ? '#FF7F50' : '#F0F0F0',
+                    shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 5, elevation: 1,
+                }}>
                     <Ionicons name="search" size={18} color="#666" />
                     <TextInput
                         style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#1A1A1A' }}
-                        placeholder={'Search "Tandoori"'}
-                        placeholderTextColor="#999"
+                        placeholder={isListening ? 'Listening...' : 'Search "Tandoori"'}
+                        placeholderTextColor={isListening ? '#FF7F50' : '#999'}
                         value={query}
                         onChangeText={setQuery}
+                        editable={!isListening && !isProcessing}
                     />
                     <View style={{ width: 1, height: 20, backgroundColor: '#EEE', marginHorizontal: 10 }} />
-                    <TouchableOpacity>
-                        <Ionicons name="mic" size={18} color="#1A1A1A" />
+
+                    {/* Mic button */}
+                    <TouchableOpacity
+                        onPress={handleMicPress}
+                        disabled={isProcessing}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        {isProcessing ? (
+                            <ActivityIndicator size="small" color="#FF7F50" />
+                        ) : (
+                            <Ionicons
+                                name={isListening ? 'mic' : 'mic-outline'}
+                                size={18}
+                                color={micColor}
+                            />
+                        )}
                     </TouchableOpacity>
                 </View>
+
+                {/* Listening hint */}
+                {isListening && (
+                    <Text style={{ textAlign: 'center', marginTop: 6, fontSize: 12, color: '#FF7F50', fontWeight: '600' }}>
+                        🎙 Tap mic again when done speaking
+                    </Text>
+                )}
             </View>
 
             {isLoading ? (
@@ -291,7 +340,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 <FlatList
                     data={filteredAndSortedTiffins}
                     keyExtractor={(item) => item._id}
-                    renderItem={({ item }) => <TiffinCard item={item} vegOnly={effectiveVegOnly}  onPress={handleTiffinPress} />}
+                    renderItem={({ item }) => <TiffinCard item={item} vegOnly={effectiveVegOnly} onPress={handleTiffinPress} />}
                     ListHeaderComponent={renderHeader}
                     contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 }}
                     onEndReached={() => hasNextPage && fetchNextPage()}

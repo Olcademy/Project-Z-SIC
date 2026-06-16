@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -46,8 +47,7 @@
     "lightningcss": "1.27.0",
     "patch-package": "^8.0.1",
     "tailwindcss": "^3.4.19",
-    "typescript": "^6.0.3",
-    "postinstall": "patch-package"
+    "typescript": "^6.0.3"
   },
   "private": true
 }

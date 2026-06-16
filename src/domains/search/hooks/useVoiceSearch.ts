@@ -1,52 +1,42 @@
-import { useRef, useState, useCallback } from 'react';
-import { Audio } from 'expo-av';
+import { useState, useCallback, useEffect } from 'react';
+import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 
 const ASSEMBLYAI_KEY = '32696d6bda7049a7bd042398b9e14432';
 
 export const useVoiceSearch = (onResult: (text: string) => void) => {
-    const [isListening, setIsListening] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const recordingRef = useRef<Audio.Recording | null>(null);
+    const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+    const recorderState = useAudioRecorderState(audioRecorder);
+
+    useEffect(() => {
+        (async () => {
+            const status = await AudioModule.requestRecordingPermissionsAsync();
+            if (!status.granted) {
+                alert('Microphone permission is required.');
+            }
+
+            await setAudioModeAsync({
+                playsInSilentMode: true,
+                allowsRecording: true,
+            });
+        })();
+    }, []);
 
     const startListening = useCallback(async () => {
         try {
-            const { granted } = await Audio.requestPermissionsAsync();
-            if (!granted) {
-                alert('Microphone permission is required.');
-                return;
-            }
-
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-            });
-
-            const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-            );
-
-            recordingRef.current = recording;
-            setIsListening(true);
+            await audioRecorder.prepareToRecordAsync();
+            audioRecorder.record();
         } catch (err) {
             console.error('Failed to start recording:', err);
-            setIsListening(false);
         }
-    }, []);
+    }, [audioRecorder]);
 
     const stopListening = useCallback(async () => {
         try {
-            setIsListening(false);
             setIsProcessing(true);
+            await audioRecorder.stop();
 
-            const recording = recordingRef.current;
-            if (!recording) return;
-
-            await recording.stopAndUnloadAsync();
-            await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-
-            const uri = recording.getURI();
-            recordingRef.current = null;
-
+            const uri = audioRecorder.uri;
             if (!uri) return;
 
             // Step 1: Upload audio to AssemblyAI
@@ -99,7 +89,7 @@ export const useVoiceSearch = (onResult: (text: string) => void) => {
         } finally {
             setIsProcessing(false);
         }
-    }, [onResult]);
+    }, [audioRecorder, onResult]);
 
-    return { startListening, stopListening, isListening, isProcessing };
+    return { startListening, stopListening, isListening: recorderState.isRecording, isProcessing };
 };

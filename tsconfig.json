@@ -3,10 +3,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "module": "ESNext",
+    "module": "preserve",
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
 
     "paths": {
       "@/*": ["src/*"],

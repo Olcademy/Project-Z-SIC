@@ -116,13 +116,13 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const getPriceValue = (item: Tiffin) => {
+    const getPriceValue = useCallback((item: Tiffin) => {
         if (typeof item.pricePerMeal === 'number') return item.pricePerMeal;
         if (typeof item.priceRange === 'number') return item.priceRange;
         return null;
-    };
+    }, []);
 
-    const getRatingValue = (item: Tiffin) => {
+    const getRatingValue = useCallback((item: Tiffin) => {
         const raw = item.rating;
         if (typeof raw === 'number') return raw;
         if (typeof raw === 'string') {
@@ -130,9 +130,9 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             return Number.isFinite(parsed) ? parsed : 0;
         }
         return 0;
-    };
+    }, []);
 
-    const hasAnyOffer = (item: Tiffin) => {
+    const hasAnyOffer = useCallback((item: Tiffin) => {
         if (item.hasOffer) return true;
         if (item.offer) return true;
         const anyItem = item as any;
@@ -140,9 +140,9 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
             return anyItem.badges.some((b: unknown) => String(b).toLowerCase().includes('offer'));
         }
         return false;
-    };
+    }, []);
 
-    const isVegTiffin = (item: Tiffin) => {
+    const isVegTiffin = useCallback((item: Tiffin) => {
         const text = [
             item.name,
             item.shortDescription,
@@ -156,7 +156,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         if (vegKeywords.some(kw => text.includes(kw))) return true;
 
         return item.vegOnly === true;
-    };
+    }, []);
 
     const effectiveVegOnly = vegOnly || globalVegOnlyMode;
 
@@ -180,21 +180,18 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
         }
 
         return filtered;
-    }, [allTiffins, debouncedQuery, vegOnly, globalVegOnlyMode, topRated, hasOffers, sortBy]);
+    }, [allTiffins, debouncedQuery, effectiveVegOnly, topRated, hasOffers, sortBy, isVegTiffin, getRatingValue, hasAnyOffer, getPriceValue]);
 
     const handleTiffinPress = useCallback((item: Tiffin) => {
-        // console.log('Tiffin:', {
-        //     id: item._id,
-        //     name: item.name,
-        // });
         navigation.navigate('TiffinDetail', { item });
     }, [navigation]);
 
-    const renderHeader = () => (
+    // ── renderHeader wrapped in useCallback so FlatList doesn't re-render
+    //    the header on every parent state change ────────────────────────────
+    const renderHeader = useCallback(() => (
         <View style={{ backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, alignItems: 'center' }}>
                 <TouchableOpacity
-                    // onPress={() => setShowFilters(true)}
                     onPress={() => {
                         setSheetType('filters');
                         setShowFilters(true);
@@ -207,7 +204,6 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    // onPress={() => setShowFilters(true)}
                     onPress={() => {
                         setSheetType('sort');
                         setShowFilters(true);
@@ -255,7 +251,8 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
             </ScrollView>
         </View>
-    );
+    ), [vegOnly, globalVegOnlyMode, topRated, hasOffers, navigation]);
+    // ─────────────────────────────────────────────────────────────────────────
 
     // ── Mic button appearance ─────────────────────────────────────────────────
     const micColor = isListening ? '#FF7F50' : '#1A1A1A';
@@ -349,7 +346,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                     initialNumToRender={8}
                     maxToRenderPerBatch={8}
                     windowSize={10}
-                    removeClippedSubviews
+                    // ✅ removeClippedSubviews removed — Android pe card "settle" hone ka main reason tha
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefetching}
@@ -374,7 +371,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                 accentColor="#FF7F50"
                 sections={
                     sheetType === 'sort'
-                    ?[
+                    ? [
                         {
                             title: 'Sort by',
                             options: [
@@ -387,7 +384,7 @@ export const TiffinListScreen: React.FC<Props> = ({ navigation }) => {
                             onSelect: (v) => setSortBy(v as SortOption),
                         },
                     ]
-                    :[
+                    : [
                         {
                             title: 'Sort by',
                             options: [
